@@ -1,0 +1,19 @@
+{
+  "name": "mint.club",
+  "version": "0.0.1",
+  "description": "Tokenize Communities",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sebastian Kim",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.1.0",
+    "hardhat": "^2.1.2"
+  }
+}

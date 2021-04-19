@@ -11,7 +11,7 @@ contract('MintClubFactory', function (accounts) {
 
   beforeEach(async function () {
     this.factory = await MintClubFactory.new();
-    this.receipt = await this.factory.createToken('New Token', 'NEW');
+    this.receipt = await this.factory.createToken('New Token', 'NEW', 1, 100, 50);
     this.token = await MintClubToken.at(this.receipt.logs[0].args.tokenAddress);
   });
 
@@ -19,6 +19,24 @@ contract('MintClubFactory', function (accounts) {
     expectEvent(this.receipt, 'TokenCreated', { tokenAddress: this.token.address });
     expect(await this.token.name()).to.equal('New Token');
     expect(await this.token.symbol()).to.equal('NEW');
+  });
+
+  it('increases token count', async function() {
+    expect(await this.factory.tokenCount()).to.be.bignumber.equal('1');
+    this.receipt = await this.factory.createToken('New Token 2', 'NEW2', 1, 100, 50);
+    expect(await this.factory.tokenCount()).to.be.bignumber.equal('2');
+  });
+
+  it('stores token address', async function() {
+    expect(await this.factory.tokens(0)).to.equal(this.token.address);
+  });
+
+  it('stores token parameters', async function() {
+    const [initialPrice, maxSupply, connectorWeight] = Object.values(await this.factory.parameters(this.token.address));
+
+    expect(initialPrice).to.be.bignumber.equal('1');
+    expect(maxSupply).to.be.bignumber.equal('100');
+    expect(connectorWeight).to.be.bignumber.equal('50');
   });
 
   describe('permissions', function() {

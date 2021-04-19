@@ -10,7 +10,6 @@ contract('MintClubToken', function (accounts) {
 
   const name = 'TestToken';
   const symbol = 'TEST';
-
   const amount = new BN('5000');
 
   const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';

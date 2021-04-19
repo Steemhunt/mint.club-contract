@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+// Openzeppelin 4.0.0
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
@@ -48,7 +49,7 @@ contract MintClubToken is Context, AccessControlEnumerable, ERC20Burnable, ERC20
      *
      * - the caller must have the `MINTER_ROLE`.
      */
-    function mint(address to, uint256 amount) public virtual {
+    function mint(address to, uint256 amount) public {
         require(hasRole(MINTER_ROLE, _msgSender()), "MintClubToken: must have minter role to mint");
         _mint(to, amount);
     }
@@ -62,7 +63,7 @@ contract MintClubToken is Context, AccessControlEnumerable, ERC20Burnable, ERC20
      *
      * - the caller must have the `PAUSER_ROLE`.
      */
-    function pause() public virtual {
+    function pause() public {
         require(hasRole(PAUSER_ROLE, _msgSender()), "MintClubToken: must have pauser role to pause");
         _pause();
     }
@@ -76,12 +77,12 @@ contract MintClubToken is Context, AccessControlEnumerable, ERC20Burnable, ERC20
      *
      * - the caller must have the `PAUSER_ROLE`.
      */
-    function unpause() public virtual {
+    function unpause() public {
         require(hasRole(PAUSER_ROLE, _msgSender()), "MintClubToken: must have pauser role to unpause");
         _unpause();
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override(ERC20, ERC20Pausable) {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Pausable) {
         super._beforeTokenTransfer(from, to, amount);
     }
 }

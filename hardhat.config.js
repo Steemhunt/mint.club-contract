@@ -15,10 +15,7 @@ require('@nomiclabs/hardhat-truffle5');
 require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
 
-if (argv.enableGasReport) {
-  require('hardhat-gas-reporter');
-}
-
+require('hardhat-gas-reporter');
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
 
@@ -42,7 +39,9 @@ module.exports = {
   },
   gasReporter: {
     currency: 'USD',
-    outputFile: argv.ci ? 'gas-report.txt' : undefined,
+    gasPrice: 150,
+    coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d'
+    // outputFile: argv.ci ? 'gas-report.txt' : undefined,
   },
 };
 

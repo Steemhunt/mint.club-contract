@@ -5,18 +5,14 @@ const { expect } = require('chai');
 
 const MintClubToken = artifacts.require('MintClubToken');
 
-contract('MintClubToken', function (accounts) {
+contract('MintClubToken', function(accounts) {
   const [ deployer, other ] = accounts;
 
   const name = 'TestToken';
   const symbol = 'TEST';
   const amount = new BN('5000');
 
-  const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
-  const MINTER_ROLE = web3.utils.soliditySha3('MINTER_ROLE');
-  const PAUSER_ROLE = web3.utils.soliditySha3('PAUSER_ROLE');
-
-  beforeEach(async function () {
+  beforeEach(async function() {
     this.token = await MintClubToken.new();
     await this.token.init(name, symbol);
   });
@@ -28,15 +24,17 @@ contract('MintClubToken', function (accounts) {
     );
   });
 
-  describe('minting', function () {
-    it('deployer can mint tokens', async function () {
+  // NOTICE: Test only covers additional functions (mint, burn, burnFrom)
+
+  describe('minting', function() {
+    it('deployer can mint tokens', async function() {
       const receipt = await this.token.mint(other, amount, { from: deployer });
       expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: other, value: amount });
 
       expect(await this.token.balanceOf(other)).to.be.bignumber.equal(amount);
     });
 
-    it('other accounts cannot mint tokens', async function () {
+    it('other accounts cannot mint tokens', async function() {
       await expectRevert(
         this.token.mint(other, amount, { from: other }),
         'PERMISSION_DENIED',
@@ -44,8 +42,8 @@ contract('MintClubToken', function (accounts) {
     });
   });
 
-  describe('burning', function () {
-    it('holders can burn their tokens', async function () {
+  describe('burning', function() {
+    it('holders can burn their tokens', async function() {
       await this.token.mint(other, amount, { from: deployer });
 
       const receipt = await this.token.burn(amount.subn(1), { from: other });
@@ -54,7 +52,7 @@ contract('MintClubToken', function (accounts) {
       expect(await this.token.balanceOf(other)).to.be.bignumber.equal('1');
     });
 
-    it("users cannot burn others' tokens", async function () {
+    it("users cannot burn others' tokens", async function() {
       await this.token.mint(other, amount, { from: deployer });
 
       expectRevert(

@@ -10,7 +10,7 @@ import "./MintClubToken.sol";
 *
 * Create an ERC20 token using proxy pattern to save gas
 */
-contract MintClubFactory is Ownable {
+abstract contract MintClubFactory is Ownable {
     /**
      *  ERC20 Token implementation contract
      *  We use "EIP-1167: Minimal Proxy Contract" in order to save gas cost for each token deployment
@@ -46,18 +46,20 @@ contract MintClubFactory is Ownable {
         }
     }
 
-    function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) public {
-        address token = _createClone(tokenImplementation);
-        MintClubToken(token).init(name, symbol);
+    function _createToken(string memory name, string memory symbol, uint256 maxTokenSupply) internal returns (address) {
+        address tokenAddress = _createClone(tokenImplementation);
+        MintClubToken newToken = MintClubToken(tokenAddress);
+        newToken.init(name, symbol);
 
-        address tokenAddress = address(token);
         tokens.push(tokenAddress);
         maxSupply[tokenAddress] = maxTokenSupply;
 
         emit TokenCreated(tokenAddress);
+
+        return tokenAddress;
     }
 
-    function tokenCount() public view returns (uint256) {
+    function tokenCount() external view returns (uint256) {
         return tokens.length;
     }
 

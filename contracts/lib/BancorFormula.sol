@@ -13,6 +13,11 @@ import "./Power.sol"; // Efficient power function.
 abstract contract BancorFormula is Power {
     uint32 internal constant MAX_WEIGHT = 1000000;
 
+    // TODO:
+    // If we're going to use y = x^2 permanently, we don't need to use this complicated power function
+    // because: ∫(x^2)dx (1->a) = (a^3/3) - (1/3)
+    // Let's optimize it once we decided what curve we're going to use
+
     /**
      * @dev given a token supply, reserve balance, weight and a deposit amount (in the reserve token),
      * calculates the target amount for a given conversion (in the main token)
@@ -34,9 +39,9 @@ abstract contract BancorFormula is Power {
         uint256 _amount
     ) public view returns (uint256) {
         // validate input
-        require(_supply > 0, "ERR_INVALID_SUPPLY");
-        require(_reserveBalance > 0, "ERR_INVALID_RESERVE_BALANCE");
-        require(_reserveWeight > 0 && _reserveWeight <= MAX_WEIGHT, "ERR_INVALID_RESERVE_WEIGHT");
+        require(_supply > 0, "INVALID_SUPPLY");
+        require(_reserveBalance > 0, "INVALID_RESERVE_BALANCE");
+        require(_reserveWeight > 0 && _reserveWeight <= MAX_WEIGHT, "INVALID_RESERVE_WEIGHT");
 
         // special case for 0 deposit amount
         if (_amount == 0) return 0;
@@ -73,10 +78,10 @@ abstract contract BancorFormula is Power {
         uint256 _amount
     ) public view returns (uint256) {
         // validate input
-        require(_supply > 0, "ERR_INVALID_SUPPLY");
-        require(_reserveBalance > 0, "ERR_INVALID_RESERVE_BALANCE");
-        require(_reserveWeight > 0 && _reserveWeight <= MAX_WEIGHT, "ERR_INVALID_RESERVE_WEIGHT");
-        require(_amount <= _supply, "ERR_INVALID_AMOUNT");
+        require(_supply > 0, "INVALID_SUPPLY");
+        require(_reserveBalance > 0, "INVALID_RESERVE_BALANCE");
+        require(_reserveWeight > 0 && _reserveWeight <= MAX_WEIGHT, "INVALID_RESERVE_WEIGHT");
+        require(_amount <= _supply, "INVALID_AMOUNT");
 
         // special case for 0 sell amount
         if (_amount == 0) return 0;

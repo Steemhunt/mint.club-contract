@@ -41,15 +41,23 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
     // Token => Reserve Balance
     mapping (address => uint256) public reserveBalance;
 
-    IERC20 BASE_TOKEN;
+    IERC20 private RESERVE_TOKEN;
 
     constructor(address baseToken, address implementation) MintClubFactory(implementation) {
-        BASE_TOKEN = IERC20(baseToken);
+        RESERVE_TOKEN = IERC20(baseToken);
     }
 
-    // function tokenSupply(address tokenAddress) public view returns (uint256) {
-    //     return MintClubToken(tokenAddress).totalSupply();
-    // }
+    // MARK: - Utility functions for external calls
+
+    function tokenSupply(address tokenAddress) external view returns (uint256) {
+        return MintClubToken(tokenAddress).totalSupply();
+    }
+
+    function reserveTokenAddress() external view returns (address) {
+        return address(RESERVE_TOKEN);
+    }
+
+    // MARK: - Core bonding curve functions
 
     // Price = ReserveBalance / (TokenSupply * ReserveWeight)
     function currentPrice(address tokenAddress) public view returns (uint256) {
@@ -91,7 +99,7 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
         require(rewardAmount >= minReward, 'SLIPPAGE_LIMIT_EXCEEDED');
 
         // Transfer reserve tokens
-        require(reserveToken.transferFrom(_msgSender(), address(this), reserveTokenAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
+        require(RESERVE_TOKEN.transferFrom(_msgSender(), address(this), reserveTokenAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
         // Mint reward tokens to the buyer
         MintClubToken(tokenAddress).mint(_msgSender(), rewardAmount);
     }
@@ -105,6 +113,6 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
         // Burn token first
         MintClubToken(tokenAddress).burnFrom(_msgSender(), tokenAmount);
         // Refund reserve tokens to the seller
-        require(reserveToken.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
+        require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
     }
 }

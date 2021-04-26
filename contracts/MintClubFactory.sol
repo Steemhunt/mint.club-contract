@@ -26,8 +26,7 @@ contract MintClubFactory is Ownable {
 
     event TokenCreated(address tokenAddress);
 
-    constructor(address baseToken, address implementation) {
-        BASE_TOKEN = IERC20(baseToken);
+    constructor(address implementation) {
         tokenImplementation = implementation;
     }
 
@@ -47,13 +46,13 @@ contract MintClubFactory is Ownable {
         }
     }
 
-    function createToken(string memory name, string memory symbol, uint256 maxSupply) public {
+    function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) public {
         address token = _createClone(tokenImplementation);
         MintClubToken(token).init(name, symbol);
 
         address tokenAddress = address(token);
         tokens.push(tokenAddress);
-        maxSupply[tokenAddress] = maxSupply;
+        maxSupply[tokenAddress] = maxTokenSupply;
 
         emit TokenCreated(tokenAddress);
     }

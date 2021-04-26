@@ -13,7 +13,7 @@ contract MintClubToken is ERC20Initializable {
     }
 
     function init(string memory name_, string memory symbol_) external {
-        require(initialized == false, "Contract already initialized");
+        require(initialized == false, "CONTRACT_ALREADY_INITIALIZED");
 
         _name = name_;
         _symbol = symbol_;
@@ -22,7 +22,7 @@ contract MintClubToken is ERC20Initializable {
     }
 
     function mint(address to, uint256 amount) public {
-        require(_owner == _msgSender(), 'Permission denied');
+        require(_owner == _msgSender(), 'PERMISSION_DENIED');
         _mint(to, amount);
     }
 }

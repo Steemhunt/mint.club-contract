@@ -10,7 +10,7 @@ import "./Power.sol"; // Efficient power function.
 * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements;
 * and to You under the Apache License, Version 2.0. "
 */
-contract BancorFormula is Power {
+abstract contract BancorFormula is Power {
     uint32 internal constant MAX_WEIGHT = 1000000;
 
     /**
@@ -32,7 +32,7 @@ contract BancorFormula is Power {
         uint256 _reserveBalance,
         uint32 _reserveWeight,
         uint256 _amount
-    ) public view override returns (uint256) {
+    ) public view returns (uint256) {
         // validate input
         require(_supply > 0, "ERR_INVALID_SUPPLY");
         require(_reserveBalance > 0, "ERR_INVALID_RESERVE_BALANCE");
@@ -71,7 +71,7 @@ contract BancorFormula is Power {
         uint256 _reserveBalance,
         uint32 _reserveWeight,
         uint256 _amount
-    ) public view override returns (uint256) {
+    ) public view returns (uint256) {
         // validate input
         require(_supply > 0, "ERR_INVALID_SUPPLY");
         require(_reserveBalance > 0, "ERR_INVALID_RESERVE_BALANCE");

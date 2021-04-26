@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
  * @notice Modified version of Openzeppelin 4.0.0 - ERC20.sol + ERC20Burnable
  * for initialization pattern
  */
-contract ERC20Initializable is Context, IERC20 {
+abstract contract ERC20Initializable is Context, IERC20 {
     mapping (address => uint256) private _balances;
 
     mapping (address => mapping (address => uint256)) private _allowances;

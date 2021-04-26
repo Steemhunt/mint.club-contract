@@ -21,6 +21,13 @@ contract('MintClubToken', function (accounts) {
     await this.token.init(name, symbol);
   });
 
+  it('cannot init twice', async function() {
+    await expectRevert(
+      this.token.init(name, symbol),
+      'CONTRACT_ALREADY_INITIALIZED'
+    );
+  });
+
   describe('minting', function () {
     it('deployer can mint tokens', async function () {
       const receipt = await this.token.mint(other, amount, { from: deployer });

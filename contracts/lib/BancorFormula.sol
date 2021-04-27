@@ -37,7 +37,7 @@ abstract contract BancorFormula is Power {
         uint256 _reserveBalance,
         uint32 _reserveWeight,
         uint256 _amount
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         // validate input
         require(_supply > 0, "INVALID_SUPPLY");
         require(_reserveBalance > 0, "INVALID_RESERVE_BALANCE");
@@ -76,7 +76,7 @@ abstract contract BancorFormula is Power {
         uint256 _reserveBalance,
         uint32 _reserveWeight,
         uint256 _amount
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         // validate input
         require(_supply > 0, "INVALID_SUPPLY");
         require(_reserveBalance > 0, "INVALID_RESERVE_BALANCE");

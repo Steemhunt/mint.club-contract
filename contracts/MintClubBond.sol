@@ -18,7 +18,8 @@ import "./lib/BancorFormula.sol";
 *      - Price = ReserveBalance / (TokenSupply * ReserveWeight)
 *
 *      > PurchaseReturn = TokenSupply * ((1 + ReserveTokensReceived / ReserveTokenBalance) ^ (ReserveRatio) - 1)
-*      > SaleReturn = ReserveTokenBalance * (1 - (1 - ContinuousTokensReceived / TokenSupply) ^ (1 / (ReserveRatio)))
+*      > SaleReturn = ReserveTokenBalance * (1 - (1 - TokensReceived / TokenSupply) ^ (1 / (ReserveRatio)))
+*      > ReserveTokenRequired = ReserveTokenBalance * (((TokenSupply + TokenToPurchase) / TokenSupply) ^ (MAX_WEIGHT / ReserveWeight) - 1)
 *
 *  References:
 *      - https://yos.io/2018/11/10/bonding-curves/
@@ -42,13 +43,13 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
      * - 2/3 corresponds to y= multiple * x^1/2
      *
      * > ReserveWeight = 1 / (n + 1) where n is the exponent
-     * > Slope = ReserveTokenBalance / (ReserveWeight * TokenSupply ^ (1 / ReserveWeight))
+     * > Slope (multiple) = ReserveTokenBalance / (ReserveWeight * TokenSupply ^ (1 / ReserveWeight))
      */
     uint32 private constant RESERVE_WEIGHT = 333333;
 
     uint256 internal constant INITIAL_SUPPLY = 1e18; // 1 token to creator by default
     // TODO: Set proper reserve
-    uint256 private constant INITIAL_RESERVE = 1e18;
+    uint256 private constant INITIAL_RESERVE = 1e18 / 1000; // Slope = 3 * RB = 0.003 (= Bitclout)
 
     // Token => Reserve Balance
     mapping (address => uint256) public reserveBalance;
@@ -88,7 +89,7 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
     function currentPrice(address tokenAddress) public view returns (uint256) {
         require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
 
-        return reserveBalance[tokenAddress] / (MintClubToken(tokenAddress).totalSupply() * RESERVE_WEIGHT / MAX_WEIGHT);
+        return 1e18 * reserveBalance[tokenAddress] / (MintClubToken(tokenAddress).totalSupply() * RESERVE_WEIGHT / MAX_WEIGHT);
     }
 
     function getMintReward(address tokenAddress, uint256 reserveTokenAmount) public view returns (uint256) {

@@ -42,14 +42,16 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
      * - 1/2 corresponds to y= multiple * x
      * - 2/3 corresponds to y= multiple * x^1/2
      *
-     * > ReserveWeight = 1 / (n + 1) where n is the exponent
+     * > ReserveWeight = 1 / (Exponent + 1) where n is the exponent
      * > Slope (multiple) = ReserveTokenBalance / (ReserveWeight * TokenSupply ^ (1 / ReserveWeight))
      */
-    uint32 private constant RESERVE_WEIGHT = 333333;
+    // uint32 private constant RESERVE_WEIGHT = 400000; // Exponent = 1.5
+    // uint256 internal constant INITIAL_SUPPLY = 1e18; // 1 token to creator by default
+    // uint256 private constant INITIAL_RESERVE = 1e10; // Slope = 0.000000025
 
-    uint256 internal constant INITIAL_SUPPLY = 1e18; // 1 token to creator by default
-    // TODO: Set proper reserve
-    uint256 private constant INITIAL_RESERVE = 1e18 / 1000; // Slope = 3 * RB = 0.003 (= Bitclout)
+    // => Price = 0.00002 * TokenSupply
+    uint256 private constant SLOPE = 2; // 0.00002 = SLOPE * 1e18;
+    uint256 private constant MAX_SLOPE = 1e23; // SLOPE = 0.00002/1e18
 
     // Token => Reserve Balance
     mapping (address => uint256) public reserveBalance;
@@ -61,16 +63,12 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
     }
 
     function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) external {
-        require(maxTokenSupply > INITIAL_SUPPLY, 'INVALID_MAX_TOKEN_SUPPLY');
+        // require(maxTokenSupply > INITIAL_SUPPLY, 'INVALID_MAX_TOKEN_SUPPLY');
 
         address tokenAddress = _createToken(name, symbol, maxTokenSupply);
 
-        // TODO: Is it okay to add a fake reserve balance at the beginning?
-        // Probably okay because it is not sellable anyway
-        reserveBalance[tokenAddress] = INITIAL_RESERVE;
-
         // Mint initial supply to the creator
-        MintClubToken(tokenAddress).mint(_msgSender(), INITIAL_SUPPLY);
+        // MintClubToken(tokenAddress).mint(_msgSender(), INITIAL_SUPPLY);
     }
 
     // MARK: - Utility functions for external calls
@@ -86,36 +84,71 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
     // MARK: - Core bonding curve functions
 
     // Price = ReserveBalance / (TokenSupply * ReserveWeight)
+    // function currentPrice(address tokenAddress) public view returns (uint256) {
+    //     require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
+
+    //     return 1e18 * reserveBalance[tokenAddress] / (MintClubToken(tokenAddress).totalSupply() * RESERVE_WEIGHT / MAX_WEIGHT);
+    // }
+
+    // Price = Slope * x ^ 2 (Slope = 3 * InitialReserve)
+    // function currentPrice(address tokenAddress) public view returns (uint256) {
+    //     require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
+
+
+    //     return (3 * INITIAL_RESERVE * (MintClubToken(tokenAddress).totalSupply() / 1e18) ** 2);
+    // }
+
     function currentPrice(address tokenAddress) public view returns (uint256) {
         require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
 
-        return 1e18 * reserveBalance[tokenAddress] / (MintClubToken(tokenAddress).totalSupply() * RESERVE_WEIGHT / MAX_WEIGHT);
+
+        return SLOPE * MintClubToken(tokenAddress).totalSupply() * 1e18 / MAX_SLOPE;
+    }
+
+    // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
+    function sqrt(uint y) internal pure returns (uint z) {
+        if (y > 3) {
+            z = y;
+            uint x = y / 2 + 1;
+            while (x < z) {
+                z = x;
+                x = (y / x + x) / 2;
+            }
+        } else if (y != 0) {
+            z = 1;
+        }
     }
 
     function getMintReward(address tokenAddress, uint256 reserveTokenAmount) public view returns (uint256) {
         require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
 
-        return purchaseTargetAmount(
-            MintClubToken(tokenAddress).totalSupply(),
-            reserveBalance[tokenAddress],
-            RESERVE_WEIGHT,
-            reserveTokenAmount
-        );
+        return sqrt(2 * MAX_SLOPE * (reserveTokenAmount + reserveBalance[tokenAddress]) / SLOPE);
     }
 
-    function getBurnRefund(address tokenAddress, uint256 tokenAmount) public view returns (uint256) {
-        require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
+    // function getMintReward(address tokenAddress, uint256 reserveTokenAmount) public view returns (uint256) {
+    //     require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
 
-        uint256 totalSupply = MintClubToken(tokenAddress).totalSupply();
-        require(tokenAmount <= totalSupply - INITIAL_SUPPLY, 'INVALID_TOKEN_AOUNT');
+    //     return purchaseTargetAmount2(
+    //         MintClubToken(tokenAddress).totalSupply(),
+    //         reserveBalance[tokenAddress],
+    //         RESERVE_WEIGHT,
+    //         reserveTokenAmount
+    //     );
+    // }
 
-        return saleTargetAmount(
-            totalSupply,
-            reserveBalance[tokenAddress],
-            RESERVE_WEIGHT,
-            tokenAmount
-        );
-    }
+    // function getBurnRefund(address tokenAddress, uint256 tokenAmount) public view returns (uint256) {
+    //     require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
+
+    //     uint256 totalSupply = MintClubToken(tokenAddress).totalSupply();
+    //     require(tokenAmount <= totalSupply, 'INVALID_TOKEN_AMOUNT');
+
+    //     return saleTargetAmount(
+    //         totalSupply,
+    //         reserveBalance[tokenAddress],
+    //         RESERVE_WEIGHT,
+    //         tokenAmount
+    //     );
+    // }
 
     function buy(address tokenAddress, uint256 reserveTokenAmount, uint256 minReward) public {
         uint256 rewardAmount = getMintReward(tokenAddress, reserveTokenAmount);
@@ -129,17 +162,17 @@ contract MintClubBond is Context, MintClubFactory, BancorFormula {
         MintClubToken(tokenAddress).mint(_msgSender(), rewardAmount);
     }
 
-    function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund) public  {
-        uint256 refundAmount = getBurnRefund(tokenAddress, tokenAmount);
-        require(refundAmount >= minRefund, 'SLIPPAGE_LIMIT_EXCEEDED');
+    // function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund) public  {
+    //     uint256 refundAmount = getBurnRefund(tokenAddress, tokenAmount);
+    //     require(refundAmount >= minRefund, 'SLIPPAGE_LIMIT_EXCEEDED');
 
-        // Burn token first
-        MintClubToken(tokenAddress).burnFrom(_msgSender(), tokenAmount);
+    //     // Burn token first
+    //     MintClubToken(tokenAddress).burnFrom(_msgSender(), tokenAmount);
 
-        // TODO: Sell Tax
+    //     // TODO: Sell Tax
 
-        // Refund reserve tokens to the seller
-        reserveBalance[tokenAddress] -= refundAmount;
-        require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
-    }
+    //     // Refund reserve tokens to the seller
+    //     reserveBalance[tokenAddress] -= refundAmount;
+    //     require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
+    // }
 }

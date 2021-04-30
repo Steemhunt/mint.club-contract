@@ -57,6 +57,24 @@ abstract contract BancorFormula is Power {
         return temp - _supply;
     }
 
+    function purchaseTargetAmount2(
+        uint256 _supply,
+        uint256 _reserveBalance,
+        uint32 _reserveWeight,
+        uint256 _amount
+    ) internal pure returns (uint256) {
+        // validate input
+        require(_supply > 0, "INVALID_SUPPLY");
+        require(_reserveBalance > 0, "INVALID_RESERVE_BALANCE");
+        require(_reserveWeight > 0 && _reserveWeight <= MAX_WEIGHT, "INVALID_RESERVE_WEIGHT");
+
+        // special case for 0 deposit amount
+        if (_amount == 0) return 0;
+
+        return ((_supply + _amount) ** 3 - _supply ** 3) / 2e10;
+    }
+
+
     /**
      * @dev given a token supply, reserve balance, weight and a sell amount (in the main token),
      * calculates the target amount for a given conversion (in the reserve token)

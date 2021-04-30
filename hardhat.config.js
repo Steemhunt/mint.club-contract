@@ -39,7 +39,7 @@ module.exports = {
   },
   gasReporter: {
     currency: 'USD',
-    gasPrice: 150,
+    gasPrice: 40,
     coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d'
     // outputFile: argv.ci ? 'gas-report.txt' : undefined,
   },

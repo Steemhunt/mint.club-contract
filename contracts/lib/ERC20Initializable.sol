@@ -6,8 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 /**
- * @notice Modified version of Openzeppelin 4.0.0 - ERC20.sol + ERC20Burnable
- * for initialization pattern
+ * @notice Modified version of Openzeppelin 4.1.0 - ERC20.sol for initialization pattern
  */
 abstract contract ERC20Initializable is Context, IERC20 {
     mapping (address => uint256) private _balances;
@@ -18,33 +17,6 @@ abstract contract ERC20Initializable is Context, IERC20 {
 
     string internal _name;
     string internal _symbol;
-
-    /**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     * See {ERC20-_burn}.
-     */
-    function burn(uint256 amount) public virtual {
-        _burn(_msgSender(), amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
-     *
-     * See {ERC20-_burn} and {ERC20-allowance}.
-     *
-     * Requirements:
-     *
-     * - the caller must have allowance for ``accounts``'s tokens of at least
-     * `amount`.
-     */
-    function burnFrom(address account, uint256 amount) public virtual {
-        uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
-        _approve(account, _msgSender(), currentAllowance - amount);
-        _burn(account, amount);
-    }
 
     /**
      * @dev Returns the name of the token.
@@ -68,7 +40,7 @@ abstract contract ERC20Initializable is Context, IERC20 {
      *
      * Tokens usually opt for a value of 18, imitating the relationship between
      * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overloaded;
+     * overridden;
      *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including

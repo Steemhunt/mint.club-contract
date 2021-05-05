@@ -46,7 +46,7 @@ abstract contract MintClubFactory is Ownable {
         }
     }
 
-    function _createToken(string memory name, string memory symbol, uint256 maxTokenSupply) internal returns (address) {
+    function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) external returns (address) {
         address tokenAddress = _createClone(tokenImplementation);
         MintClubToken newToken = MintClubToken(tokenAddress);
         newToken.init(name, symbol);

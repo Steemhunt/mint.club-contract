@@ -42,7 +42,7 @@ contract('MintClubFactory', function(accounts) {
 
     it('increases token count', async function() {
       expect(await this.factory.tokenCount()).to.be.bignumber.equal('1');
-      const receipt2 = await this.factory.createToken('New Token 2', 'NEW2', ether('500'));
+      await this.factory.createToken('New Token 2', 'NEW2', ether('500'));
       expect(await this.factory.tokenCount()).to.be.bignumber.equal('2');
     });
 

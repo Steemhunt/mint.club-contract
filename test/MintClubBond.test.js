@@ -1,5 +1,5 @@
 const { ether, BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
-const { MAX_UINT256 } = constants;
+const { MAX_UINT256, ZERO_ADDRESS } = constants;
 
 const { expect } = require('chai');
 
@@ -7,86 +7,74 @@ const MintClubToken = artifacts.require('MintClubToken');
 const MintClubBond = artifacts.require('MintClubBond');
 
 contract('MintClubBond', function(accounts) {
-  const [ deployer, other ] = accounts;
+  const [ deployer, alice, bob ] = accounts;
+
+  const ORIGINAL_BALANCE_A = new BN('10000000');
+  const ORIGINAL_BALANCE_B = new BN('1');
+  const MAX_SUPPLY = new BN('1000000');
 
   beforeEach(async function() {
     this.reserveToken = await MintClubToken.new();
     await this.reserveToken.init('Reserve Token', 'RESERVE');
-    await this.reserveToken.mint(other, ether('10000000'));
+
+    await this.reserveToken.mint(alice, ether(ORIGINAL_BALANCE_A));
+    await this.reserveToken.mint(bob, ether(ORIGINAL_BALANCE_B));
 
     const tokenImplimentation = await MintClubToken.new();
     this.bond = await MintClubBond.new(this.reserveToken.address, tokenImplimentation.address);
-    this.receipt = await this.bond.createToken('New Token', 'NEW', ether('100000'));
+
+    this.receipt = await this.bond.createToken('New Token', 'NEW', ether(MAX_SUPPLY));
     this.token = await MintClubToken.at(this.receipt.logs[0].args.tokenAddress);
 
-    await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: other });
+    await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: alice });
+    await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: bob });
   });
 
   it('should have infinite allowance', async function() {
-    expect(await this.reserveToken.allowance(other, this.bond.address, { from: other })).to.be.bignumber.equal(MAX_UINT256);
+    expect(await this.reserveToken.allowance(alice, this.bond.address, { from: alice })).to.be.bignumber.equal(MAX_UINT256);
   });
 
   /**
    * REF: Price calculation
    * https://docs.google.com/spreadsheets/d/1BbkFrhD3R7waPPw8ZmY5qHrJIe-umJksnsJRsNGRTl4/edit?usp=sharing
-   * NOTE: Calculation may be a little bit off because we use an approximate value to save gas (Power.sol)
    *
    * TokenSupply | Price         | Reserve Balance
    * ----------- | ------------- | --------------------
    */
-  // const TABLE = [
-  //   [ '1'        , '0.000000025' , '0.000000010'        ],
-  //   [ '10'       , '0.000000791' , '0.000003162'        ],
-  //   [ '100'      , '0.000025000' , '0.001000000'        ],
-  //   [ '1000'     , '0.000790569' , '0.316227766'        ],
-  //   [ '10000'    , '0.025000000' , '100.000000000'      ],
-  //   [ '100000'   , '0.790569415' , '31622.776601684'    ],
-  //   [ '1000000'  , '25.000000000', '10000000.000000000' ],
-  // ];
-  // const TABLE = [
-  //   [ '1'        , '0.00000000015' , '0.00000000005'         ],
-  //   [ '10'       , '0.00000001500' , '0.00000001355'         ],
-  //   [ '100'      , '0.00000150000' , '0.00001355000'         ],
-  //   [ '1000'     , '0.00015000000' , '0.01355000000'         ],
-  //   [ '10000'    , '0.01500000000' , '13.55000000000'        ],
-  //   [ '100000'   , '1.50000000000' , '13550.00000000000'     ],
-  //   [ '1000000'  , '150.00000000000', '13550000.00000000000' ],
-  // ];
   const TABLE = [
     [ '1'        , '0.00002' , '0.00001'         ],
     [ '10'       , '0.00020' , '0.00100'         ],
     [ '100'      , '0.00200' , '0.10000'         ],
+    [ '500'      , '0.01000' , '2.50000'         ],
     [ '1000'     , '0.02000' , '10.00000'        ],
-    [ '10000'    , '0.20000' , '1000.00000'        ],
-    [ '100000'   , '2.00000' , '100000.00000'     ],
-    [ '1000000'  , '20.00000', '10000000.00000' ],
+    [ '7000'     , '0.14000' , '490.00000'       ],
+    [ '10000'    , '0.20000' , '1000.00000'      ],
+    [ '90000'    , '1.80000' , '81000.00000'     ],
+    [ '100000'   , '2.00000' , '100000.00000'    ],
+    [ '300000'   , '6.00000' , '900000.00000'    ],
+    [ '1000000'  , '20.00000', '10000000.00000'  ],
   ];
 
-  // it('initial token price', async function() {
-  //   expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal(ether(TABLE[0][1]));
-  // });
+  it('initial token price', async function() {
+    expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal('0');
+  });
 
-  // it('should have initial reserve balance', async function() {
-  //   expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal(ether(TABLE[0][2]));
-  // });
+  it('should have initial reserve balance', async function() {
+    expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal('0');
+  });
 
-  // it('should give 1 token to the creator', async function() {
-  //   expect(await this.token.balanceOf(deployer)).to.be.bignumber.equal(ether(TABLE[0][0]));
-  // });
+  it('should give 1 token to the creator', async function() {
+    expect(await this.token.balanceOf(deployer)).to.be.bignumber.equal('0');
+  });
 
   describe('buy', function() {
-    for (let i = 1; i < TABLE.length; i++) {
+    for (let i = 0; i < TABLE.length; i++) {
       describe(`up to ${TABLE[i][0]} tokens`, function() {
         beforeEach(async function() {
-          // console.log('--------------', TABLE[i][2]-TABLE[0][2]);
-
-          // TODO: Use BN
-          await this.bond.buy(this.token.address, ether(TABLE[i][2]), 0, { from: other });
+          this.receipt2 = await this.bond.buy(this.token.address, ether(TABLE[i][2]), 0, { from: alice });
         });
 
-        // TODO: should emit an event
-
-        it('has correct reserve balance', async function() {
+        it('has correct pool reserve balance', async function() {
           expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal(ether(TABLE[i][2]));
         });
 
@@ -94,14 +82,78 @@ contract('MintClubBond', function(accounts) {
           expect(await this.bond.tokenSupply(this.token.address)).to.be.bignumber.equal(ether(TABLE[i][0]));
         });
 
-        it('gives user a correct balance', async function() {
-          expect(await this.token.balanceOf(other)).to.be.bignumber.equal(ether(TABLE[i][0]));
-        });
-
         it('increases the price per token', async function() {
           expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal(ether(TABLE[i][1]));
         });
+
+        it('gives user a correct balance', async function() {
+          expect(await this.token.balanceOf(alice)).to.be.bignumber.equal(ether(TABLE[i][0]));
+        });
+
+        it('reduces the reserve token balance of user', async function() {
+          const newBalance = ether(ORIGINAL_BALANCE_A).sub(ether(TABLE[i][2]));
+          expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(newBalance);
+        });
       });
     }
+
+    // FIXME:
+    it('cannot be over max supply limit', async function() {
+      await expectRevert(
+        this.bond.buy(this.token.address, ether(MAX_SUPPLY.addn(1)), 0, { from: alice }),
+        'MAX_SUPPLY_LIMIT_EXCEEDED',
+      );
+    });
+
+    // TODO: Slippage limit revert test
+  });
+
+  describe('sell', function() {
+    for (let i = TABLE.length - 1; i > 0; i--) {
+      describe(`from ${TABLE[i][0]} tokens`, function() {
+        beforeEach(async function() {
+          await this.bond.buy(this.token.address, ether(TABLE[i][2]), 0, { from: alice });
+          await this.token.approve(this.bond.address, MAX_UINT256, { from: alice });
+
+          const sellAmount = ether(new BN(TABLE[i][0]).sub(new BN(TABLE[i - 1][0])));
+          await this.bond.sell(this.token.address, sellAmount, 0, { from: alice });
+        });
+
+        it('has correct pool reserve balance', async function() {
+          expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal(ether(TABLE[i - 1][2]));
+        });
+
+        it('has correct total supply', async function() {
+          expect(await this.bond.tokenSupply(this.token.address)).to.be.bignumber.equal(ether(TABLE[i - 1][0]));
+          expect(await this.token.totalSupply()).to.be.bignumber.equal(ether(TABLE[i - 1][0]));
+        });
+
+        it('decreases the price per token', async function() {
+          expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal(ether(TABLE[i - 1][1]));
+        });
+
+        it('reduces the balance of user', async function() {
+          expect(await this.token.balanceOf(alice)).to.be.bignumber.equal(ether(TABLE[i - 1][0]));
+        });
+
+        // TODO: Calculate sell tax
+        it('increase the reserve token balance of user', async function () {
+          const newBalance = ether(ORIGINAL_BALANCE_A).sub(ether(TABLE[i - 1][2]));
+          expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(newBalance);
+        });
+      });
+    }
+    it('cannot sell more than user balance', async function () {
+      await this.bond.buy(this.token.address, ether('0.001'), 0, { from: alice }); // Buy 10 tokens
+      await this.bond.buy(this.token.address, ether('0.001'), 0, { from: bob }); // To prevent negative value on getBurnRefund
+      await this.token.approve(this.bond.address, MAX_UINT256, { from: alice });
+
+      await expectRevert(
+        this.bond.sell(this.token.address, ether('11'), 0, { from: alice }), // Try to sell 11 tokens
+        'VM Exception while processing transaction: revert ERC20: burn amount exceeds balance',
+      );
+    });
+
+    // TODO: Slippage limit revert test
   });
 });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.3;
 
 import "./lib/ERC20Initializable.sol";
 
@@ -9,7 +9,7 @@ contract MintClubToken is ERC20Initializable {
     bool private _initialized; // false by default
 
     function init(string memory name_, string memory symbol_) external {
-        require(_initialized == false, 'CONTRACT_ALREADY_INITIALIZED');
+        require(_initialized == false, "CONTRACT_ALREADY_INITIALIZED");
 
         _name = name_;
         _symbol = symbol_;
@@ -19,7 +19,7 @@ contract MintClubToken is ERC20Initializable {
     }
 
     function mint(address to, uint256 amount) public {
-        require(_owner == _msgSender(), 'PERMISSION_DENIED');
+        require(_owner == _msgSender(), "PERMISSION_DENIED");
         _mint(to, amount);
     }
 

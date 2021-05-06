@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -40,7 +40,7 @@ contract MintClubBond is Context, MintClubFactory {
     // MARK: - Core bonding curve functions
 
     modifier _checkBondExists(address tokenAddress) {
-        require(exists(tokenAddress), 'TOKEN_NOT_FOUND');
+        require(exists(tokenAddress), "TOKEN_NOT_FOUND");
         _;
     }
 
@@ -51,7 +51,7 @@ contract MintClubBond is Context, MintClubFactory {
     function getMintReward(address tokenAddress, uint256 reserveTokenAmount) public view _checkBondExists(tokenAddress) returns (uint256) {
         uint256 toMint = Math.floorSqrt(2 * MAX_SLOPE * (reserveTokenAmount + reserveBalance[tokenAddress]) / SLOPE);
 
-        require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], 'MAX_SUPPLY_LIMIT_EXCEEDED');
+        require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], "MAX_SUPPLY_LIMIT_EXCEEDED");
 
         return toMint;
     }
@@ -65,19 +65,19 @@ contract MintClubBond is Context, MintClubFactory {
 
     function buy(address tokenAddress, uint256 reserveTokenAmount, uint256 minReward) public {
         uint256 rewardAmount = getMintReward(tokenAddress, reserveTokenAmount);
-        require(rewardAmount >= minReward, 'SLIPPAGE_LIMIT_EXCEEDED');
+        require(rewardAmount >= minReward, "SLIPPAGE_LIMIT_EXCEEDED");
 
         // Transfer reserve tokens
-        require(RESERVE_TOKEN.transferFrom(_msgSender(), address(this), reserveTokenAmount), 'RESERVE_TOKEN_TRANSFER_FAILED');
+        require(RESERVE_TOKEN.transferFrom(_msgSender(), address(this), reserveTokenAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
         reserveBalance[tokenAddress] += reserveTokenAmount;
 
         // Mint reward tokens to the buyer
         MintClubToken(tokenAddress).mint(_msgSender(), rewardAmount);
     }
 
-    function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund) public  {
+    function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund) public {
         uint256 refundAmount = getBurnRefund(tokenAddress, tokenAmount);
-        require(refundAmount >= minRefund, 'SLIPPAGE_LIMIT_EXCEEDED');
+        require(refundAmount >= minRefund, "SLIPPAGE_LIMIT_EXCEEDED");
 
         // Burn token first
         MintClubToken(tokenAddress).burnFrom(_msgSender(), tokenAmount);

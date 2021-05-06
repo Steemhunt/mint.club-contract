@@ -1,7 +1,8 @@
 /// ENVVAR
 // - ENABLE_GAS_REPORT
-// - CI
 // - COMPILE_MODE
+
+require('dotenv').config();
 
 const path = require('path');
 const argv = require('yargs/yargs')()
@@ -16,8 +17,10 @@ require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
 
 require('hardhat-gas-reporter');
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-web3");
+require('@nomiclabs/hardhat-waffle');
+require('@nomiclabs/hardhat-web3');
+
+require('hardhat-deploy');
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -25,29 +28,35 @@ require("@nomiclabs/hardhat-web3");
 module.exports = {
   solidity: {
     version: '0.8.3',
+    namedAccounts: {
+      deployer: 0
+    },
     settings: {
       optimizer: {
         enabled: argv.enableGasReport || argv.compileMode === 'production',
-        runs: 200,
+        runs: 800,
       },
     },
   },
   networks: {
     hardhat: {
-      blockGasLimit: 10000000,
+      blockGasLimit: 14000000,
     },
+    goerli: {
+      url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ARCHEMY_PROJECT_ID}`,
+      accounts: [process.env.TESTER_PRIVATE_KEY]
+    }
   },
   gasReporter: {
     currency: 'USD',
     gasPrice: 40,
-    coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d'
-    // outputFile: argv.ci ? 'gas-report.txt' : undefined,
+    coinmarketcap: process.env.COIN_MARKET_CAP_API
   },
 };
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async () => {
+task('accounts', 'Prints the list of accounts', async () => {
   const accounts = await ethers.getSigners();
 
   for (const account of accounts) {

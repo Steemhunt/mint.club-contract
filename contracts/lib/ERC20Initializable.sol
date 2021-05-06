@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
 /**
  * @notice Modified version of Openzeppelin 4.1.0 - ERC20.sol for initialization pattern
  */
+
 abstract contract ERC20Initializable is Context, IERC20 {
     mapping (address => uint256) private _balances;
 

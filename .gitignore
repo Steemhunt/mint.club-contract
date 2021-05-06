@@ -27,7 +27,7 @@ node_modules
 npm-debug.log
 
 # local env variables
-.env
+.env*
 
 # truffle build directory
 build/

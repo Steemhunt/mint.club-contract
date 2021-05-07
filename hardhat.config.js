@@ -20,17 +20,12 @@ require('hardhat-gas-reporter');
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-web3');
 
-require('hardhat-deploy');
-
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
   solidity: {
     version: '0.8.3',
-    namedAccounts: {
-      deployer: 0
-    },
     settings: {
       optimizer: {
         enabled: argv.enableGasReport || argv.compileMode === 'production',

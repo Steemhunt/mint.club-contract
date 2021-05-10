@@ -97,10 +97,10 @@ contract('MintClubBond', function(accounts) {
       });
     }
 
-    // FIXME:
     it('cannot be over max supply limit', async function() {
+      const MAX_COLLATERAL = new BN(TABLE.filter(t => t[0] === String(MAX_SUPPLY))[0][2]);
       await expectRevert(
-        this.bond.buy(this.token.address, ether(MAX_SUPPLY.addn(1)), 0, { from: alice }),
+        this.bond.buy(this.token.address, ether(MAX_COLLATERAL.addn(1)), 0, { from: alice }),
         'MAX_SUPPLY_LIMIT_EXCEEDED',
       );
     });

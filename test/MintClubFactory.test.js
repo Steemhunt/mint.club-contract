@@ -40,6 +40,13 @@ contract('MintClubFactory', function(accounts) {
       expect(await this.factory.maxSupply(receipt2.logs[0].args.tokenAddress)).to.be.bignumber.equal(ether('500'));
     });
 
+    it('canot set maxSupply over MAX_SUPPLY_LIMIT', async function() {
+      await expectRevert(
+        this.factory.createToken('New Token 2', 'NEW2', ether('100001')),
+        'MAX_SUPPLY_LIMIT_EXCEEDED',
+      );
+    });
+
     it('increases token count', async function() {
       expect(await this.factory.tokenCount()).to.be.bignumber.equal('1');
       await this.factory.createToken('New Token 2', 'NEW2', ether('500'));

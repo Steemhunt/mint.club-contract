@@ -23,6 +23,7 @@ abstract contract MintClubFactory is Ownable {
 
     // Token => Max Supply
     mapping (address => uint256) public maxSupply;
+    uint256 private constant MAX_SUPPLY_LIMIT = 100000 * 1e18; // Where it requires 100M HUNT tokens as collateral
 
     event TokenCreated(address tokenAddress);
 
@@ -47,6 +48,8 @@ abstract contract MintClubFactory is Ownable {
     }
 
     function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) external returns (address) {
+        require(maxTokenSupply <= MAX_SUPPLY_LIMIT, 'MAX_SUPPLY_LIMIT_EXCEEDED');
+
         address tokenAddress = _createClone(tokenImplementation);
         MintClubToken newToken = MintClubToken(tokenAddress);
         newToken.init(name, symbol);

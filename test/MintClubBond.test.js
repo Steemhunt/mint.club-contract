@@ -9,9 +9,9 @@ const MintClubBond = artifacts.require('MintClubBond');
 contract('MintClubBond', function(accounts) {
   const [ deployer, alice, bob ] = accounts;
 
-  const ORIGINAL_BALANCE_A = new BN('10000000');
+  const ORIGINAL_BALANCE_A = new BN('200000000');
   const ORIGINAL_BALANCE_B = new BN('1');
-  const MAX_SUPPLY = new BN('1000000');
+  const MAX_SUPPLY = new BN('100000');
 
   beforeEach(async function() {
     this.reserveToken = await MintClubToken.new();
@@ -42,17 +42,15 @@ contract('MintClubBond', function(accounts) {
    * ----------- | ------------- | --------------------
    */
   const TABLE = [
-    [ '1'        , '0.00002' , '0.00001'         ],
-    [ '10'       , '0.00020' , '0.00100'         ],
-    [ '100'      , '0.00200' , '0.10000'         ],
-    [ '500'      , '0.01000' , '2.50000'         ],
-    [ '1000'     , '0.02000' , '10.00000'        ],
-    [ '7000'     , '0.14000' , '490.00000'       ],
-    [ '10000'    , '0.20000' , '1000.00000'      ],
-    [ '90000'    , '1.80000' , '81000.00000'     ],
-    [ '100000'   , '2.00000' , '100000.00000'    ],
-    [ '300000'   , '6.00000' , '900000.00000'    ],
-    [ '1000000'  , '20.00000', '10000000.00000'  ],
+    [ '1'        , '0.020' , '0.01'           ],
+    [ '10'       , '0.200' , '1.00'           ],
+    [ '100'      , '2.000' , '100'            ],
+    [ '500'      , '10.00' , '2500'           ],
+    [ '1000'     , '20.00' , '10000'          ],
+    [ '7000'     , '140.0' , '490000'         ],
+    [ '10000'    , '200.0' , '1000000'        ],
+    [ '90000'    , '1800.0', '81000000'       ],
+    [ '100000'   , '2000.0', '100000000'      ]
   ];
 
   it('initial token price', async function() {
@@ -101,7 +99,7 @@ contract('MintClubBond', function(accounts) {
       const MAX_COLLATERAL = new BN(TABLE.filter(t => t[0] === String(MAX_SUPPLY))[0][2]);
       await expectRevert(
         this.bond.buy(this.token.address, ether(MAX_COLLATERAL.addn(1)), 0, { from: alice }),
-        'MAX_SUPPLY_LIMIT_EXCEEDED',
+        'EXCEEDED_MAX_SUPPLY',
       );
     });
 
@@ -144,8 +142,8 @@ contract('MintClubBond', function(accounts) {
       });
     }
     it('cannot sell more than user balance', async function () {
-      await this.bond.buy(this.token.address, ether('0.001'), 0, { from: alice }); // Buy 10 tokens
-      await this.bond.buy(this.token.address, ether('0.001'), 0, { from: bob }); // To prevent negative value on getBurnRefund
+      await this.bond.buy(this.token.address, ether('1.00'), 0, { from: alice }); // Buy 10 tokens
+      await this.bond.buy(this.token.address, ether('1.00'), 0, { from: bob }); // To prevent negative value on getBurnRefund
       await this.token.approve(this.bond.address, MAX_UINT256, { from: alice });
 
       await expectRevert(

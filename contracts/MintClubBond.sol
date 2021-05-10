@@ -14,9 +14,9 @@ import "./lib/Math.sol";
 * Providing liquidity for MintClub tokens with a bonding curve.
 */
 contract MintClubBond is Context, MintClubFactory {
-    // Bonding Curve: Price = 0.00002 * TokenSupply (Linear)
-    uint256 private constant SLOPE = 2; // 0.00002 = SLOPE * 1e18;
-    uint256 private constant MAX_SLOPE = 1e23; // SLOPE = 0.00002/1e18
+    // Bonding Curve: Price = 0.02 * TokenSupply (Linear)
+    uint256 private constant SLOPE = 2; // 0.02 = SLOPE * 1e18;
+    uint256 private constant MAX_SLOPE = 1e20; // SLOPE = 0.02/1e18
 
     // Token => Reserve Balance
     mapping (address => uint256) public reserveBalance;
@@ -51,7 +51,7 @@ contract MintClubBond is Context, MintClubFactory {
     function getMintReward(address tokenAddress, uint256 reserveTokenAmount) public view _checkBondExists(tokenAddress) returns (uint256) {
         uint256 toMint = Math.floorSqrt(2 * MAX_SLOPE * (reserveTokenAmount + reserveBalance[tokenAddress]) / SLOPE);
 
-        require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], "MAX_SUPPLY_LIMIT_EXCEEDED");
+        require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], "EXCEEDED_MAX_SUPPLY");
 
         return toMint;
     }

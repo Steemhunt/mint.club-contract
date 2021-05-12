@@ -78,7 +78,7 @@ contract('MintClubBond', function(accounts) {
           this.reserveWithTax = values[0];
           this.tax = values[1];
 
-          this.receipt2 = await this.bond.buy(this.token.address, this.reserveWithTax, 0, REFERRAL_ADDRESS, { from: alice });
+          await this.bond.buy(this.token.address, this.reserveWithTax, 0, REFERRAL_ADDRESS, { from: alice });
         });
 
         it('has correct pool reserve balance', async function() {
@@ -116,9 +116,23 @@ contract('MintClubBond', function(accounts) {
       );
     });
 
-    // TODO: Buy without referral address
+    it('burns referral comission if referral is not set', async function() {
+      await this.bond.buy(this.token.address, ether('1'), 0, ZERO_ADDRESS, { from: alice });
 
-    // TODO: Slippage limit revert test
+      expect(await this.reserveToken.totalSupply()).to.be.bignumber.equal(
+        ether(ORIGINAL_BALANCE_A.add(ORIGINAL_BALANCE_B)).sub(ether('0.003')) // 0.3% burnt
+      );
+      expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(ether(ORIGINAL_BALANCE_A).sub(ether('1')));
+    });
+
+    it('should revert if minReward is not satisfied', async function() {
+      // Buy 10 tokens = 1 reserve token required
+      const [reserveAmount, ] = calculateReserveWithTax('1.0');
+      expectRevert(
+        this.bond.buy(this.token.address, reserveAmount, ether('10').addn(1), REFERRAL_ADDRESS, { from: alice }),
+        'SLIPPAGE_LIMIT_EXCEEDED'
+      );
+    });
   });
 
   // describe('sell', function() {

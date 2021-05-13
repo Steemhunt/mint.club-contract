@@ -52,9 +52,9 @@ contract MintClubBond is Context, MintClubFactory {
         return SLOPE * MintClubToken(tokenAddress).totalSupply() * 1e18 / MAX_SLOPE;
     }
 
-    function getMintReward(address tokenAddress, uint256 reserveTokenAmount) public view _checkBondExists(tokenAddress) returns (uint256, uint256) {
-        uint256 taxAmount = reserveTokenAmount * BUY_TAX / MAX_TAX;
-        uint256 toMint = Math.floorSqrt(2 * MAX_SLOPE * ((reserveTokenAmount - taxAmount) + reserveBalance[tokenAddress]) / SLOPE);
+    function getMintReward(address tokenAddress, uint256 reserveAmount) public view _checkBondExists(tokenAddress) returns (uint256, uint256) {
+        uint256 taxAmount = reserveAmount * BUY_TAX / MAX_TAX;
+        uint256 toMint = Math.floorSqrt(2 * MAX_SLOPE * ((reserveAmount - taxAmount) + reserveBalance[tokenAddress]) / SLOPE);
 
         require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], "EXCEEDED_MAX_SUPPLY");
 
@@ -65,25 +65,25 @@ contract MintClubBond is Context, MintClubFactory {
         uint256 newTokenSupply = MintClubToken(tokenAddress).totalSupply() - tokenAmount;
 
         // Should be the same as: (SLOPE / (2 * MAX_SLOPE)) * (totalSupply**2 - newTokenSupply**2);
-        uint256 refundAmount = reserveBalance[tokenAddress] - (newTokenSupply**2 * SLOPE / (2 * MAX_SLOPE));
-        uint256 taxAmount = refundAmount * SELL_TAX / MAX_TAX;
+        uint256 reserveAmount = reserveBalance[tokenAddress] - (newTokenSupply**2 * SLOPE / (2 * MAX_SLOPE));
+        uint256 taxAmount = reserveAmount * SELL_TAX / MAX_TAX;
 
-        return (refundAmount - taxAmount, taxAmount);
+        return (reserveAmount - taxAmount, taxAmount);
     }
 
-    function buy(address tokenAddress, uint256 reserveTokenAmount, uint256 minReward, address referral) public {
-        (uint256 rewardTokens, uint256 taxAmount) = getMintReward(tokenAddress, reserveTokenAmount);
+    function buy(address tokenAddress, uint256 reserveAmount, uint256 minReward, address referral) public {
+        (uint256 rewardTokens, uint256 taxAmount) = getMintReward(tokenAddress, reserveAmount);
         require(rewardTokens >= minReward, "SLIPPAGE_LIMIT_EXCEEDED");
 
         // Transfer reserve tokens
-        require(RESERVE_TOKEN.transferFrom(_msgSender(), address(this), reserveTokenAmount - taxAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
-        reserveBalance[tokenAddress] += reserveTokenAmount - taxAmount;
+        require(RESERVE_TOKEN.transferFrom(_msgSender(), address(this), reserveAmount - taxAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
+        reserveBalance[tokenAddress] += (reserveAmount - taxAmount);
 
         // Mint reward tokens to the buyer
         MintClubToken(tokenAddress).mint(_msgSender(), rewardTokens);
 
-        // Pay tax to the referral / Burn if referral is not set
-        if (referral == address(0)) {
+        // Pay tax to the referral / Burn if referral is not set (or abused)
+        if (referral == address(0) || referral == _msgSender()) {
             RESERVE_TOKEN.burnFrom(_msgSender(), taxAmount);
         } else {
             RESERVE_TOKEN.transferFrom(_msgSender(), referral, taxAmount);
@@ -98,11 +98,11 @@ contract MintClubBond is Context, MintClubFactory {
         MintClubToken(tokenAddress).burnFrom(_msgSender(), tokenAmount);
 
         // Refund reserve tokens to the seller
-        reserveBalance[tokenAddress] -= refundAmount;
+        reserveBalance[tokenAddress] -= (refundAmount + taxAmount);
         require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
 
-        // Pay tax to the referral / Burn if referral is not set
-        if (referral == address(0)) {
+        // Pay tax to the referral / Burn if referral is not set (or abused)
+        if (referral == address(0) || referral == _msgSender()) {
             RESERVE_TOKEN.burn(taxAmount);
         } else {
             RESERVE_TOKEN.transfer(referral, taxAmount);

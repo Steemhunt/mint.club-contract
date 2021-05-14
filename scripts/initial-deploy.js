@@ -17,20 +17,20 @@ async function main() {
 
   console.log(`Token implementation is deployed at ${token.address}`);
 
-  let huntTokenAddress = '0x9aab071b4129b083b01cb5a0cb513ce7eca26fa5';
-  if (process.env.HARDHAT_NETWORK !== 'production') {
-    // Make a mock Hunt token to be used as a reserve token
-    await token.init('Test Reserve Token', 'RESERVE', { gasLimit: 150000 });
-    await token.mint(deployer, '10000000000000000000000000', { gasLimit: 100000 }); // 10M test tokens
+  // Make a mock Hunt token to be used as a reserve token
+  await token.init('Mint Club', 'MINT', { gasLimit: 150000 });
 
-    huntTokenAddress = token.address;
+  if (process.env.HARDHAT_NETWORK !== 'production') {
+    await token.mint(deployer, '800000000000000000000000000000', { gasLimit: 100000 }); // 800B test tokens
   }
 
   const MintClubBond = await hre.ethers.getContractFactory('MintClubBond');
-  const bond = await MintClubBond.deploy(huntTokenAddress, token.address);
+  const bond = await MintClubBond.deploy(token.address, token.address);
   await bond.deployed();
 
-  console.log(`MintClubBond is deployed at ${bond.address}`);
+  console.log('---');
+  console.log(`MINT token: ${token.address}`);
+  console.log(`MintClubBond contract: ${bond.address}`);
 };
 
 main()

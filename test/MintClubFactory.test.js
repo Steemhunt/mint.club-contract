@@ -42,7 +42,7 @@ contract('MintClubFactory', function(accounts) {
 
     it('canot set maxSupply over MAX_SUPPLY_LIMIT', async function() {
       await expectRevert(
-        this.factory.createToken('New Token 2', 'NEW2', ether('100001')),
+        this.factory.createToken('New Token 2', 'NEW2', ether('1000000').addn(1)),
         'MAX_SUPPLY_LIMIT_EXCEEDED',
       );
     });

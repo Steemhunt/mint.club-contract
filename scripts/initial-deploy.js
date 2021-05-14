@@ -20,8 +20,8 @@ async function main() {
   let huntTokenAddress = '0x9aab071b4129b083b01cb5a0cb513ce7eca26fa5';
   if (process.env.HARDHAT_NETWORK !== 'production') {
     // Make a mock Hunt token to be used as a reserve token
-    await token.init('Test HuntToken', 'TESTHUNT');
-    await token.mint(deployer, '10000000000000000000000000'); // 10M test tokens
+    await token.init('Test Reserve Token', 'RESERVE', { gasLimit: 150000 });
+    await token.mint(deployer, '10000000000000000000000000', { gasLimit: 100000 }); // 10M test tokens
 
     huntTokenAddress = token.address;
   }

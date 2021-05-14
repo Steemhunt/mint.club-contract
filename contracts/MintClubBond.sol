@@ -14,10 +14,6 @@ import "./lib/Math.sol";
 * Providing liquidity for MintClub tokens with a bonding curve.
 */
 contract MintClubBond is Context, MintClubFactory {
-    // Bonding Curve: Price = 0.02 * TokenSupply (Linear)
-    uint256 private constant SLOPE = 2; // 0.02 = SLOPE * 1e18;
-    uint256 private constant MAX_SLOPE = 1e20; // SLOPE = 0.02/1e18
-
     uint256 private constant BUY_TAX = 3; // 0.3%
     uint256 private constant SELL_TAX = 13; // 1.3%
     uint256 private constant MAX_TAX = 1000;
@@ -25,17 +21,13 @@ contract MintClubBond is Context, MintClubFactory {
     // Token => Reserve Balance
     mapping (address => uint256) public reserveBalance;
 
-    MintClubToken private RESERVE_TOKEN; // IERC20 + burnable
+    MintClubToken private RESERVE_TOKEN; // MINT: IERC20 + burnable
 
     constructor(address baseToken, address implementation) MintClubFactory(implementation) {
         RESERVE_TOKEN = MintClubToken(baseToken);
     }
 
     // MARK: - Utility functions for external calls
-
-    function tokenSupply(address tokenAddress) external view returns (uint256) {
-        return MintClubToken(tokenAddress).totalSupply();
-    }
 
     function reserveTokenAddress() external view returns (address) {
         return address(RESERVE_TOKEN);
@@ -48,13 +40,17 @@ contract MintClubBond is Context, MintClubFactory {
         _;
     }
 
+    /**
+     * @dev Use the simplest bonding curve (y = x) as we can adjust total supply of reserve tokens to adjust slope
+     * Price = SLOPE * totalSupply = totalSupply (where slope = 1)
+     */
     function currentPrice(address tokenAddress) public view _checkBondExists(tokenAddress) returns (uint256) {
-        return SLOPE * MintClubToken(tokenAddress).totalSupply() * 1e18 / MAX_SLOPE;
+        return MintClubToken(tokenAddress).totalSupply();
     }
 
     function getMintReward(address tokenAddress, uint256 reserveAmount) public view _checkBondExists(tokenAddress) returns (uint256, uint256) {
         uint256 taxAmount = reserveAmount * BUY_TAX / MAX_TAX;
-        uint256 toMint = Math.floorSqrt(2 * MAX_SLOPE * ((reserveAmount - taxAmount) + reserveBalance[tokenAddress]) / SLOPE);
+        uint256 toMint = Math.floorSqrt(2 * 1e18 * ((reserveAmount - taxAmount) + reserveBalance[tokenAddress]));
 
         require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], "EXCEEDED_MAX_SUPPLY");
 
@@ -65,7 +61,7 @@ contract MintClubBond is Context, MintClubFactory {
         uint256 newTokenSupply = MintClubToken(tokenAddress).totalSupply() - tokenAmount;
 
         // Should be the same as: (SLOPE / (2 * MAX_SLOPE)) * (totalSupply**2 - newTokenSupply**2);
-        uint256 reserveAmount = reserveBalance[tokenAddress] - (newTokenSupply**2 * SLOPE / (2 * MAX_SLOPE));
+        uint256 reserveAmount = reserveBalance[tokenAddress] - (newTokenSupply**2 / (2 * 1e18));
         uint256 taxAmount = reserveAmount * SELL_TAX / MAX_TAX;
 
         return (reserveAmount - taxAmount, taxAmount);

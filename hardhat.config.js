@@ -28,17 +28,32 @@ module.exports = {
     version: '0.8.3',
     settings: {
       optimizer: {
-        enabled: argv.enableGasReport || argv.compileMode === 'production',
-        runs: 800,
+        enabled: true, // argv.enableGasReport || argv.compileMode === 'production',
+        runs: 1500,
       },
     },
   },
   networks: {
     hardhat: {
-      blockGasLimit: 14000000,
+      blockGasLimit: 8000000,
     },
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ARCHEMY_PROJECT_ID}`,
+      blockGasLimit: 8000000,
+      accounts: [process.env.TESTER_PRIVATE_KEY]
+    },
+    bsctest: {
+      url: `https://data-seed-prebsc-2-s1.binance.org:8545`,
+      chainId: 97,
+      gasPrice: 10000000000, // 10 GWei
+      blockGasLimit: 30000000,
+      accounts: [process.env.TESTER_PRIVATE_KEY]
+    },
+    bscmain: {
+      url: `https://bsc-dataseed.binance.org`,
+      chainId: 56,
+      gasPrice: 10000000000, // 10 GWei
+      blockGasLimit: 50000000,
       accounts: [process.env.TESTER_PRIVATE_KEY]
     }
   },

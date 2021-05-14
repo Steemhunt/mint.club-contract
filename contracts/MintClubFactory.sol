@@ -23,7 +23,7 @@ abstract contract MintClubFactory is Ownable {
 
     // Token => Max Supply
     mapping (address => uint256) public maxSupply;
-    uint256 private constant MAX_SUPPLY_LIMIT = 100000 * 1e18; // Where it requires 100M HUNT tokens as collateral
+    uint256 private constant MAX_SUPPLY_LIMIT = 1000000 * 1e18; // Where it requires 100M HUNT tokens as collateral
 
     event TokenCreated(address tokenAddress);
 

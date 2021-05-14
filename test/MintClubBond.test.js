@@ -9,10 +9,10 @@ const MintClubBond = artifacts.require('MintClubBond');
 contract('MintClubBond', function(accounts) {
   const [ deployer, alice, bob ] = accounts;
 
-  const ORIGINAL_BALANCE_A = new BN('200000000');
-  const ORIGINAL_BALANCE_B = new BN('1');
+  const ORIGINAL_BALANCE_A = new BN('700000000000'); // 700B
+  const ORIGINAL_BALANCE_B = new BN('100000000000'); // 100B
   const TOTAL_RESERVE_SUPPLY = ORIGINAL_BALANCE_A.add(ORIGINAL_BALANCE_B);
-  const MAX_SUPPLY = new BN('100000');
+  const MAX_SUPPLY = new BN('1000000');
 
   beforeEach(async function() {
     this.reserveToken = await MintClubToken.new();
@@ -51,15 +51,17 @@ contract('MintClubBond', function(accounts) {
    * ----------- | -------- | ---------------
    */
   const TABLE = [
-    [ '1'        , '0.020'  , '0.01'      ],
-    [ '10'       , '0.200'  , '1.00'      ],
-    [ '100'      , '2.000'  , '100'       ],
-    [ '500'      , '10.00'  , '2500'      ],
-    [ '1000'     , '20.00'  , '10000'     ],
-    [ '7000'     , '140.0'  , '490000'    ],
-    [ '10000'    , '200.0'  , '1000000'   ],
-    [ '90000'    , '1800.0' , '81000000'  ],
-    [ '100000'   , '2000.0' , '100000000' ]
+    [ '1'        , '1'       , '0.5'            ],
+    [ '10'       , '10'      , '50'           ],
+    [ '100'      , '100'     , '5000'         ],
+    [ '500'      , '500'     , '125000'       ],
+    [ '1000'     , '1000'    , '500000'       ],
+    [ '7000'     , '7000'    , '24500000'     ],
+    [ '10000'    , '10000'   , '50000000'     ],
+    [ '90000'    , '90000'   , '4050000000'   ],
+    [ '100000'   , '100000'  , '5000000000'   ], // 5B = $20,000 (where 1 MINT = $0.000004)
+    [ '800000'   , '800000'  , '320000000000' ],
+    [ '1000000'  , '1000000' , '500000000000' ] // 500B = $2M
   ];
   const REFERRAL_ADDRESS = '0x32A935f79ce498aeFF77Acd2F7f35B3aAbC31a2D';
 
@@ -87,7 +89,7 @@ contract('MintClubBond', function(accounts) {
         });
 
         it('has correct total supply', async function() {
-          expect(await this.bond.tokenSupply(this.token.address)).to.be.bignumber.equal(ether(TABLE[i][0]));
+          expect(await this.token.totalSupply()).to.be.bignumber.equal(ether(TABLE[i][0]));
         });
 
         it('increases the price per token', async function() {
@@ -130,15 +132,17 @@ contract('MintClubBond', function(accounts) {
     });
 
     it('should revert if minReward is not satisfied', async function() {
-      // Buy 10 tokens = 1 reserve token required
-      const [reserveAmount, ] = calculateReserveWithTax('1.0');
+      // Pick a random row from price table [supply, price, reserve]
+      const random = TABLE[Math.floor(Math.random() * TABLE.length)];
+
+      const [reserveAmount, ] = calculateReserveWithTax(random[2]);
       expectRevert(
-        this.bond.buy(this.token.address, reserveAmount, ether('10').addn(1), REFERRAL_ADDRESS, { from: alice }),
+        this.bond.buy(this.token.address, reserveAmount, ether(random[0]).addn(1), REFERRAL_ADDRESS, { from: alice }),
         'SLIPPAGE_LIMIT_EXCEEDED'
       );
 
       // Should not revert
-      this.bond.buy(this.token.address, reserveAmount, ether('10'), REFERRAL_ADDRESS, { from: alice });
+      this.bond.buy(this.token.address, reserveAmount, ether(random[0]), REFERRAL_ADDRESS, { from: alice });
     });
   });
 
@@ -163,7 +167,6 @@ contract('MintClubBond', function(accounts) {
         });
 
         it('has correct total supply', async function() {
-          expect(await this.bond.tokenSupply(this.token.address)).to.be.bignumber.equal(ether(TABLE[i - 1][0]));
           expect(await this.token.totalSupply()).to.be.bignumber.equal(ether(TABLE[i - 1][0]));
         });
 
@@ -189,12 +192,15 @@ contract('MintClubBond', function(accounts) {
 
     describe(`edge cases`, function() {
       beforeEach(async function() {
-        const buyAmount = calculateReserveWithTax('1.0')[0];
-        await this.bond.buy(this.token.address, buyAmount, 0, REFERRAL_ADDRESS, { from: alice }); // Buy 10 tokens
+        // Pick a random row from price table [supply, price, reserve]
+        this.random = TABLE[Math.floor(Math.random() * TABLE.length)];
+
+        const buyAmount = calculateReserveWithTax(this.random[2])[0];
+        await this.bond.buy(this.token.address, buyAmount, 0, REFERRAL_ADDRESS, { from: alice });
         this.buyAmountAfterTax = await this.bond.reserveBalance(this.token.address); // 0.997
         await this.token.approve(this.bond.address, MAX_UINT256, { from: alice });
 
-        this.balance = await this.token.balanceOf(alice); // should be 10
+        this.balance = await this.token.balanceOf(alice); // should be this.random[0]
         this.sellTax = this.buyAmountAfterTax.mul(new BN('13')).div(new BN('1000')); // 1.3% sell tax
       });
 
@@ -202,12 +208,12 @@ contract('MintClubBond', function(accounts) {
         await this.bond.buy(this.token.address, ether('1.00'), 0, REFERRAL_ADDRESS, { from: bob }); // To prevent tokenSupply < tokenAmount (reverting on getBurnRefund)
 
         await expectRevert(
-          this.bond.sell(this.token.address, ether('10').addn(1), 0, REFERRAL_ADDRESS, { from: alice }),
+          this.bond.sell(this.token.address, ether(this.random[0]).addn(1), 0, REFERRAL_ADDRESS, { from: alice }),
           'VM Exception while processing transaction: revert ERC20: burn amount exceeds balance',
         );
 
         // Should not revert
-        await this.bond.sell(this.token.address, ether('10'), 0, REFERRAL_ADDRESS, { from: alice });
+        await this.bond.sell(this.token.address, ether(this.random[0]), 0, REFERRAL_ADDRESS, { from: alice });
       });
 
       it('burns referral comission if referral is not set', async function() {

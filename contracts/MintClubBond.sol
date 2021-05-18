@@ -3,7 +3,6 @@
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "./MintClubFactory.sol";
 import "./MintClubToken.sol";
 import "./lib/Math.sol";
@@ -13,7 +12,7 @@ import "./lib/Math.sol";
 *
 * Providing liquidity for MintClub tokens with a bonding curve.
 */
-contract MintClubBond is Context, MintClubFactory {
+contract MintClubBond is MintClubFactory {
     uint256 private constant BUY_TAX = 3; // 0.3%
     uint256 private constant SELL_TAX = 13; // 1.3%
     uint256 private constant MAX_TAX = 1000;
@@ -22,9 +21,11 @@ contract MintClubBond is Context, MintClubFactory {
     mapping (address => uint256) public reserveBalance;
 
     MintClubToken private RESERVE_TOKEN; // MINT: IERC20 + burnable
+    address public defaultBeneficiary;
 
     constructor(address baseToken, address implementation) MintClubFactory(implementation) {
         RESERVE_TOKEN = MintClubToken(baseToken);
+        defaultBeneficiary = address(0x82CA6d313BffE56E9096b16633dfD414148D66b1);
     }
 
     // MARK: - Utility functions for external calls
@@ -33,7 +34,9 @@ contract MintClubBond is Context, MintClubFactory {
         return address(RESERVE_TOKEN);
     }
 
-    // MARK: - Core bonding curve functions
+    function setDefaultBeneficiary(address beneficiary) external onlyOwner {
+        defaultBeneficiary = beneficiary;
+    }
 
     modifier _checkBondExists(address tokenAddress) {
         require(exists(tokenAddress), "TOKEN_NOT_FOUND");
@@ -67,7 +70,7 @@ contract MintClubBond is Context, MintClubFactory {
         return (reserveAmount - taxAmount, taxAmount);
     }
 
-    function buy(address tokenAddress, uint256 reserveAmount, uint256 minReward, address referral) public {
+    function buy(address tokenAddress, uint256 reserveAmount, uint256 minReward, address beneficiary) public {
         (uint256 rewardTokens, uint256 taxAmount) = getMintReward(tokenAddress, reserveAmount);
         require(rewardTokens >= minReward, "SLIPPAGE_LIMIT_EXCEEDED");
 
@@ -78,15 +81,15 @@ contract MintClubBond is Context, MintClubFactory {
         // Mint reward tokens to the buyer
         MintClubToken(tokenAddress).mint(_msgSender(), rewardTokens);
 
-        // Pay tax to the referral / Burn if referral is not set (or abused)
-        if (referral == address(0) || referral == _msgSender()) {
-            RESERVE_TOKEN.burnFrom(_msgSender(), taxAmount);
+        // Pay tax to the beneficiary / Burn if beneficiary is not set (or abused)
+        if (beneficiary == address(0) || beneficiary == _msgSender()) {
+            RESERVE_TOKEN.transferFrom(_msgSender(), defaultBeneficiary, taxAmount);
         } else {
-            RESERVE_TOKEN.transferFrom(_msgSender(), referral, taxAmount);
+            RESERVE_TOKEN.transferFrom(_msgSender(), beneficiary, taxAmount);
         }
     }
 
-    function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund, address referral) public {
+    function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund, address beneficiary) public {
         (uint256 refundAmount, uint256 taxAmount) = getBurnRefund(tokenAddress, tokenAmount);
         require(refundAmount >= minRefund, "SLIPPAGE_LIMIT_EXCEEDED");
 
@@ -97,11 +100,11 @@ contract MintClubBond is Context, MintClubFactory {
         reserveBalance[tokenAddress] -= (refundAmount + taxAmount);
         require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
 
-        // Pay tax to the referral / Burn if referral is not set (or abused)
-        if (referral == address(0) || referral == _msgSender()) {
-            RESERVE_TOKEN.burn(taxAmount);
+        // Pay tax to the beneficiary / Burn if beneficiary is not set (or abused)
+        if (beneficiary == address(0) || beneficiary == _msgSender()) {
+            RESERVE_TOKEN.transfer(defaultBeneficiary, taxAmount);
         } else {
-            RESERVE_TOKEN.transfer(referral, taxAmount);
+            RESERVE_TOKEN.transfer(beneficiary, taxAmount);
         }
     }
 }

@@ -63,7 +63,8 @@ contract('MintClubBond', function(accounts) {
     [ '800000'   , '800000'  , '320000000000' ],
     [ '1000000'  , '1000000' , '500000000000' ] // 500B = $2M
   ];
-  const REFERRAL_ADDRESS = '0x32A935f79ce498aeFF77Acd2F7f35B3aAbC31a2D';
+  const BENEFICIARY = '0x32A935f79ce498aeFF77Acd2F7f35B3aAbC31a2D';
+  const DEFAULT_BENEFICIARY = '0x82CA6d313BffE56E9096b16633dfD414148D66b1';
 
   // We need to put a little bit more Reserve Tokens than the table values due to 0.3% buy tax
   const calculateReserveWithTax = function(reserveAmount) {
@@ -81,7 +82,7 @@ contract('MintClubBond', function(accounts) {
           this.reserveWithTax = values[0];
           this.tax = values[1];
 
-          await this.bond.buy(this.token.address, this.reserveWithTax, 0, REFERRAL_ADDRESS, { from: alice });
+          await this.bond.buy(this.token.address, this.reserveWithTax, 0, BENEFICIARY, { from: alice });
         });
 
         it('has correct pool reserve balance', async function() {
@@ -105,8 +106,8 @@ contract('MintClubBond', function(accounts) {
           expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(newBalance);
         });
 
-        it('gives referral comission', async function() {
-          expect(await this.reserveToken.balanceOf(REFERRAL_ADDRESS)).to.be.bignumber.equal(this.tax);
+        it('gives beneficiary comission', async function() {
+          expect(await this.reserveToken.balanceOf(BENEFICIARY)).to.be.bignumber.equal(this.tax);
         });
       });
     }
@@ -114,21 +115,19 @@ contract('MintClubBond', function(accounts) {
     it('cannot be over max supply limit', async function() {
       const [MAX_COLLATERAL, ] = calculateReserveWithTax(TABLE.filter(t => t[0] === String(MAX_SUPPLY))[0][2]);
       await expectRevert(
-        this.bond.buy(this.token.address, MAX_COLLATERAL.add(ether('1')), 0, REFERRAL_ADDRESS, { from: alice }),
+        this.bond.buy(this.token.address, MAX_COLLATERAL.add(ether('1')), 0, BENEFICIARY, { from: alice }),
         'EXCEEDED_MAX_SUPPLY',
       );
 
       // Should not revert
-      await this.bond.buy(this.token.address, MAX_COLLATERAL, 0, REFERRAL_ADDRESS, { from: alice });
+      await this.bond.buy(this.token.address, MAX_COLLATERAL, 0, BENEFICIARY, { from: alice });
     });
 
-    it('burns referral comission if referral is not set', async function() {
+    it('send fee to default beneficiary if beneficiary is not set', async function() {
       await this.bond.buy(this.token.address, ether('1'), 0, ZERO_ADDRESS, { from: alice });
 
-      expect(await this.reserveToken.totalSupply()).to.be.bignumber.equal(
-        ether(TOTAL_RESERVE_SUPPLY).sub(ether('0.003')) // 0.3% burnt
-      );
       expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(ether(ORIGINAL_BALANCE_A).sub(ether('1')));
+      expect(await this.reserveToken.balanceOf(DEFAULT_BENEFICIARY)).to.be.bignumber.equal(ether('0.003')); // 0.3%
     });
 
     it('should revert if minReward is not satisfied', async function() {
@@ -137,12 +136,12 @@ contract('MintClubBond', function(accounts) {
 
       const [reserveAmount, ] = calculateReserveWithTax(random[2]);
       expectRevert(
-        this.bond.buy(this.token.address, reserveAmount, ether(random[0]).addn(1), REFERRAL_ADDRESS, { from: alice }),
+        this.bond.buy(this.token.address, reserveAmount, ether(random[0]).addn(1), BENEFICIARY, { from: alice }),
         'SLIPPAGE_LIMIT_EXCEEDED'
       );
 
       // Should not revert
-      this.bond.buy(this.token.address, reserveAmount, ether(random[0]), REFERRAL_ADDRESS, { from: alice });
+      this.bond.buy(this.token.address, reserveAmount, ether(random[0]), BENEFICIARY, { from: alice });
     });
   });
 
@@ -156,7 +155,7 @@ contract('MintClubBond', function(accounts) {
 
           this.aliceBalanceBeforeSell = await this.reserveToken.balanceOf(alice);
           const sellAmount = ether(new BN(TABLE[i][0]).sub(new BN(TABLE[i - 1][0])));
-          await this.bond.sell(this.token.address, sellAmount, 0, REFERRAL_ADDRESS, { from: alice });
+          await this.bond.sell(this.token.address, sellAmount, 0, BENEFICIARY, { from: alice });
 
           this.reserveRefunded = ether(TABLE[i][2]).sub(ether(TABLE[i - 1][2]));
           this.sellTax = this.reserveRefunded.mul(new BN('13')).div(new BN('1000')); // 1.3% sell tax
@@ -184,8 +183,8 @@ contract('MintClubBond', function(accounts) {
           );
         });
 
-        it('gives referral comission', async function() {
-          expect(await this.reserveToken.balanceOf(REFERRAL_ADDRESS)).to.be.bignumber.equal(this.sellTax);
+        it('gives beneficiary comission', async function() {
+          expect(await this.reserveToken.balanceOf(BENEFICIARY)).to.be.bignumber.equal(this.sellTax);
         });
       });
     }
@@ -196,7 +195,7 @@ contract('MintClubBond', function(accounts) {
         this.random = TABLE[Math.floor(Math.random() * TABLE.length)];
 
         const buyAmount = calculateReserveWithTax(this.random[2])[0];
-        await this.bond.buy(this.token.address, buyAmount, 0, REFERRAL_ADDRESS, { from: alice });
+        await this.bond.buy(this.token.address, buyAmount, 0, BENEFICIARY, { from: alice });
         this.buyAmountAfterTax = await this.bond.reserveBalance(this.token.address); // 0.997
         await this.token.approve(this.bond.address, MAX_UINT256, { from: alice });
 
@@ -205,33 +204,31 @@ contract('MintClubBond', function(accounts) {
       });
 
       it('cannot sell more than user balance', async function () {
-        await this.bond.buy(this.token.address, ether('1.00'), 0, REFERRAL_ADDRESS, { from: bob }); // To prevent tokenSupply < tokenAmount (reverting on getBurnRefund)
+        await this.bond.buy(this.token.address, ether('1.00'), 0, BENEFICIARY, { from: bob }); // To prevent tokenSupply < tokenAmount (reverting on getBurnRefund)
 
         await expectRevert(
-          this.bond.sell(this.token.address, ether(this.random[0]).addn(1), 0, REFERRAL_ADDRESS, { from: alice }),
+          this.bond.sell(this.token.address, ether(this.random[0]).addn(1), 0, BENEFICIARY, { from: alice }),
           'VM Exception while processing transaction: revert ERC20: burn amount exceeds balance',
         );
 
         // Should not revert
-        await this.bond.sell(this.token.address, ether(this.random[0]), 0, REFERRAL_ADDRESS, { from: alice });
+        await this.bond.sell(this.token.address, ether(this.random[0]), 0, BENEFICIARY, { from: alice });
       });
 
-      it('burns referral comission if referral is not set', async function() {
+      it('send fee to default beneficiary if beneficiary is not set', async function() {
         await this.bond.sell(this.token.address, this.balance, 0, ZERO_ADDRESS, { from: alice }); // Sell all tokens (should return all reserve)
 
-        expect(await this.reserveToken.totalSupply()).to.be.bignumber.equal(
-          ether(TOTAL_RESERVE_SUPPLY).sub(this.sellTax) // 1.3% burnt
-        );
+        expect(await this.reserveToken.balanceOf(DEFAULT_BENEFICIARY)).to.be.bignumber.equal(this.sellTax); // 1.3%
       });
 
       it('should revert if minReward is not satisfied', async function() {
         expectRevert(
-          this.bond.sell(this.token.address, this.balance, this.buyAmountAfterTax.sub(this.sellTax).addn(1), REFERRAL_ADDRESS, { from: alice }),
+          this.bond.sell(this.token.address, this.balance, this.buyAmountAfterTax.sub(this.sellTax).addn(1), BENEFICIARY, { from: alice }),
           'SLIPPAGE_LIMIT_EXCEEDED'
         );
 
         // Should not revert
-        await this.bond.sell(this.token.address, this.balance, this.buyAmountAfterTax.sub(this.sellTax), REFERRAL_ADDRESS, { from: alice });
+        await this.bond.sell(this.token.address, this.balance, this.buyAmountAfterTax.sub(this.sellTax), BENEFICIARY, { from: alice });
       });
     });
   });

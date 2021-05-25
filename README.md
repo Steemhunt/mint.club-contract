@@ -1,6 +1,11 @@
 # Mint Club
 Smart contracts for mint.club
 
+## Deploy
+```
+HARDHAT_NETWORK=goerli node scripts/initial-deploy.js
+```
+
 ## Gas Consumption
 ```
 ·---------------------------------------|----------------------------|-------------|-----------------------------·

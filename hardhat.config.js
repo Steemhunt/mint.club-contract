@@ -19,6 +19,7 @@ require('solidity-coverage');
 require('hardhat-gas-reporter');
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-web3');
+require("@nomiclabs/hardhat-etherscan");
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -62,6 +63,9 @@ module.exports = {
     gasPrice: 40,
     coinmarketcap: process.env.COIN_MARKET_CAP_API
   },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY
+  }
 };
 
 // This is a sample Hardhat task. To learn how to create your own go to

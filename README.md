@@ -4,6 +4,9 @@ Smart contracts for mint.club
 ## Deploy
 ```
 HARDHAT_NETWORK=goerli node scripts/initial-deploy.js
+
+# Verify source code on Etherscan
+npx hardhat verify --network goerli {contract address}
 ```
 
 ## Gas Consumption

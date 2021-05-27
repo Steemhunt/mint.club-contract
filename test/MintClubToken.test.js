@@ -37,8 +37,21 @@ contract('MintClubToken', function(accounts) {
     it('other accounts cannot mint tokens', async function() {
       await expectRevert(
         this.token.mint(other, amount, { from: other }),
-        'PERMISSION_DENIED',
+        'Ownable: caller is not the owner',
       );
+    });
+  });
+
+  describe('ownable', function() {
+    it('sets owner properly', async function() {
+      expect(await this.token.owner()).to.equal(deployer);
+    });
+
+    it('renounceOwnership', async function() {
+      const receipt = await this.token.renounceOwnership();
+      expectEvent(receipt, 'OwnershipTransferred', { previousOwner: deployer, newOwner: ZERO_ADDRESS });
+
+      expect(await this.token.owner()).to.equal(ZERO_ADDRESS);
     });
   });
 

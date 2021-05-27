@@ -4,14 +4,14 @@ const { ZERO_ADDRESS } = constants;
 const { expect } = require('chai');
 
 const MintClubToken = artifacts.require('MintClubToken');
-const MintClubFactoryMock = artifacts.require('MintClubFactoryMock');
+const MintClubFactory = artifacts.require('MintClubFactory');
 
 contract('MintClubFactory', function(accounts) {
   const [ deployer, other ] = accounts;
 
   beforeEach(async function() {
     const tokenImplimentation = await MintClubToken.new();
-    this.factory = await MintClubFactoryMock.new(tokenImplimentation.address);
+    this.factory = await MintClubFactory.new(tokenImplimentation.address);
     this.receipt = await this.factory.createToken('New Token', 'NEW', ether('100.0'));
     this.token = await MintClubToken.at(this.receipt.logs[0].args.tokenAddress);
   });

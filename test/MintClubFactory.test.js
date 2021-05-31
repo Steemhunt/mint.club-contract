@@ -4,16 +4,16 @@ const { ZERO_ADDRESS } = constants;
 const { expect } = require('chai');
 
 const MintClubToken = artifacts.require('MintClubToken');
-const MintClubFactory = artifacts.require('MintClubFactory');
+const MintClubFactoryMock = artifacts.require('MintClubFactoryMock');
 
 contract('MintClubFactory', function(accounts) {
   const [ deployer, other ] = accounts;
 
   beforeEach(async function() {
     const tokenImplimentation = await MintClubToken.new();
-    this.factory = await MintClubFactory.new(tokenImplimentation.address);
+    this.factory = await MintClubFactoryMock.new(tokenImplimentation.address);
     this.receipt = await this.factory.createToken('New Token', 'NEW', ether('100.0'));
-    this.token = await MintClubToken.at(this.receipt.logs[0].args.tokenAddress);
+    this.token = await MintClubToken.at(this.receipt.logs[1].args.tokenAddress);
   });
 
   describe('creation', function() {
@@ -37,7 +37,7 @@ contract('MintClubFactory', function(accounts) {
       expect(await this.factory.maxSupply(this.token.address)).to.be.bignumber.equal(ether('100'));
 
       const receipt2 = await this.factory.createToken('New Token 2', 'NEW2', ether('500'));
-      expect(await this.factory.maxSupply(receipt2.logs[0].args.tokenAddress)).to.be.bignumber.equal(ether('500'));
+      expect(await this.factory.maxSupply(receipt2.logs[1].args.tokenAddress)).to.be.bignumber.equal(ether('500'));
     });
 
     it('canot set maxSupply over MAX_SUPPLY_LIMIT', async function() {

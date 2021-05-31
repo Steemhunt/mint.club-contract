@@ -25,7 +25,7 @@ contract('MintClubBond', function(accounts) {
     this.bond = await MintClubBond.new(this.reserveToken.address, tokenImplimentation.address);
 
     this.receipt = await this.bond.createToken('New Token', 'NEW', ether(MAX_SUPPLY));
-    this.token = await MintClubToken.at(this.receipt.logs[0].args.tokenAddress);
+    this.token = await MintClubToken.at(this.receipt.logs[1].args.tokenAddress);
 
     await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: alice });
     await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: bob });
@@ -51,7 +51,7 @@ contract('MintClubBond', function(accounts) {
    * ----------- | -------- | ---------------
    */
   const TABLE = [
-    [ '1'        , '1'       , '0.5'            ],
+    [ '1'        , '1'       , '0.5'          ],
     [ '10'       , '10'      , '50'           ],
     [ '100'      , '100'     , '5000'         ],
     [ '500'      , '500'     , '125000'       ],

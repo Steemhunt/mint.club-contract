@@ -31,6 +31,13 @@ contract('MintClubBond', function(accounts) {
     await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: bob });
   });
 
+  it('should revert on an invalid token address', async function() {
+    await expectRevert(
+      this.bond.buy(ZERO_ADDRESS, '1', 0, BENEFICIARY, { from: alice }),
+      'TOKEN_NOT_FOUND'
+    );
+  })
+
   it('should have infinite allowance', async function() {
     expect(await this.reserveToken.allowance(alice, this.bond.address, { from: alice })).to.be.bignumber.equal(MAX_UINT256);
   });

@@ -66,7 +66,7 @@ abstract contract MintClubFactory is Ownable {
         return tokens.length;
     }
 
-    function exists(address tokenAddress) public view returns (bool) {
+    function exists(address tokenAddress) external view returns (bool) {
         return maxSupply[tokenAddress] > 0;
     }
 }

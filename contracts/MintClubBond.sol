@@ -20,12 +20,17 @@ contract MintClubBond is MintClubFactory {
     // Token => Reserve Balance
     mapping (address => uint256) public reserveBalance;
 
-    MintClubToken private RESERVE_TOKEN; // MINT: IERC20 + burnable
+    MintClubToken private RESERVE_TOKEN; // Any IERC20
     address public defaultBeneficiary;
 
     constructor(address baseToken, address implementation) MintClubFactory(implementation) {
         RESERVE_TOKEN = MintClubToken(baseToken);
         defaultBeneficiary = address(0x82CA6d313BffE56E9096b16633dfD414148D66b1);
+    }
+
+    modifier _checkBondExists(address tokenAddress) {
+        require(maxSupply[tokenAddress] > 0, "TOKEN_NOT_FOUND");
+        _;
     }
 
     // MARK: - Utility functions for external calls
@@ -38,18 +43,14 @@ contract MintClubBond is MintClubFactory {
         defaultBeneficiary = beneficiary;
     }
 
-    modifier _checkBondExists(address tokenAddress) {
-        require(exists(tokenAddress), "TOKEN_NOT_FOUND");
-        _;
+    function currentPrice(address tokenAddress) external view _checkBondExists(tokenAddress) returns (uint256) {
+        return MintClubToken(tokenAddress).totalSupply();
     }
 
     /**
      * @dev Use the simplest bonding curve (y = x) as we can adjust total supply of reserve tokens to adjust slope
      * Price = SLOPE * totalSupply = totalSupply (where slope = 1)
      */
-    function currentPrice(address tokenAddress) public view _checkBondExists(tokenAddress) returns (uint256) {
-        return MintClubToken(tokenAddress).totalSupply();
-    }
 
     function getMintReward(address tokenAddress, uint256 reserveAmount) public view _checkBondExists(tokenAddress) returns (uint256, uint256) {
         uint256 taxAmount = reserveAmount * BUY_TAX / MAX_TAX;
@@ -63,7 +64,7 @@ contract MintClubBond is MintClubFactory {
     function getBurnRefund(address tokenAddress, uint256 tokenAmount) public view _checkBondExists(tokenAddress) returns (uint256, uint256) {
         uint256 newTokenSupply = MintClubToken(tokenAddress).totalSupply() - tokenAmount;
 
-        // Should be the same as: (SLOPE / (2 * MAX_SLOPE)) * (totalSupply**2 - newTokenSupply**2);
+        // Should be the same as: (1/2 * (totalSupply**2 - newTokenSupply**2);
         uint256 reserveAmount = reserveBalance[tokenAddress] - (newTokenSupply**2 / (2 * 1e18));
         uint256 taxAmount = reserveAmount * SELL_TAX / MAX_TAX;
 

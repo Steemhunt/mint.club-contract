@@ -1,8 +1,13 @@
 # Mint Club
 Smart contracts for mint.club
 
-## Deploy
+## Run Tests
+```bash
+npx hardhat test
 ```
+
+## Deploy
+```bash
 HARDHAT_NETWORK=goerli node scripts/initial-deploy.js
 
 # Verify source code on Etherscan

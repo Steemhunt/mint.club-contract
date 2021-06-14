@@ -6,7 +6,7 @@ import "./lib/ERC20Initializable.sol";
 
 contract MintClubToken is ERC20Initializable {
     bool private _initialized; // false by default
-    address private _owner;
+    address private _owner; // Ownable is implemented manually to meke it compatible with `initializable`
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 

@@ -41,21 +41,21 @@ module.exports = {
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ARCHEMY_PROJECT_ID}`,
       blockGasLimit: 8000000,
-      accounts: [process.env.TESTER_PRIVATE_KEY]
+      accounts: [process.env.BSC_TEST_PRIVATE_KEY]
     },
     bsctest: {
       url: `https://data-seed-prebsc-2-s1.binance.org:8545`,
       chainId: 97,
       gasPrice: 10000000000, // 10 GWei
       blockGasLimit: 30000000,
-      accounts: [process.env.TESTER_PRIVATE_KEY]
+      accounts: [process.env.BSC_TEST_PRIVATE_KEY]
     },
     bscmain: {
       url: `https://bsc-dataseed.binance.org`,
       chainId: 56,
       gasPrice: 10000000000, // 10 GWei
       blockGasLimit: 50000000,
-      accounts: [process.env.TESTER_PRIVATE_KEY]
+      accounts: [process.env.BSC_PRIVATE_KEY]
     }
   },
   gasReporter: {
@@ -64,7 +64,7 @@ module.exports = {
     coinmarketcap: process.env.COIN_MARKET_CAP_API
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
+    apiKey: process.env.BSCSCAN_API_KEY
   }
 };
 

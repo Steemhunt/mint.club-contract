@@ -8,7 +8,7 @@ const hre = require("hardhat");
 async function main() {
   const accounts = await hre.ethers.getSigners();
   const deployer = accounts[0].address;
-  console.log(`Deploy from account: ${deployer}`);
+  console.log(`Deploy from account: ${deployer} / ${process.env.HARDHAT_NETWORK}`);
 
   // MARK: - Deploy MintClubToken implementation
   const MintClubToken = await hre.ethers.getContractFactory('MintClubToken');

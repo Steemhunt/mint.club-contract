@@ -10,26 +10,14 @@ async function main() {
   const deployer = accounts[0].address;
   console.log(`Deploy from account: ${deployer}`);
 
-  const BASE_TOKEN = ''; // TODO: MINT token as a reserve token
-
   // MARK: - Deploy MintClubToken implementation
   const MintClubToken = await hre.ethers.getContractFactory('MintClubToken');
   const token = await MintClubToken.deploy();
   await token.deployed();
 
-  console.log(`Token implementation is deployed at ${token.address}`);
+  await token.init('Mint.club', 'MINT', { gasLimit: 150000 });
 
-  // Make a mock Hunt token to be used as a reserve token
-  await token.init('Mint.club Token Implementation', 'MINT_CLUB_TOKEN_IMPLEMENTATION', { gasLimit: 150000 });
-
-  const MintClubBond = await hre.ethers.getContractFactory('MintClubBond');
-  const bond = await MintClubBond.deploy(BASE_TOKEN, token.address);
-  await bond.deployed();
-
-  console.log('---');
-  console.log(`MINT token: ${BASE_TOKEN}`);
-  console.log(`MintClubToken implementation: ${token.address}`);
-  console.log(`MintClubBond contract: ${bond.address}`);
+  console.log(`MINT token: ${token.address}`);
 };
 
 main()

@@ -40,6 +40,7 @@ contract MintClubBond is MintClubFactory {
     }
 
     function setDefaultBeneficiary(address beneficiary) external onlyOwner {
+        require(beneficiary != address(0), 'DEFAULT_BENEFICIARY_CANNOT_BE_NULL');
         defaultBeneficiary = beneficiary;
     }
 
@@ -82,7 +83,7 @@ contract MintClubBond is MintClubFactory {
         // Mint reward tokens to the buyer
         MintClubToken(tokenAddress).mint(_msgSender(), rewardTokens);
 
-        // Pay tax to the beneficiary / Burn if beneficiary is not set (or abused)
+        // Pay tax to the beneficiary / Send to the default beneficiary if not set (or abused)
         if (beneficiary == address(0) || beneficiary == _msgSender()) {
             RESERVE_TOKEN.transferFrom(_msgSender(), defaultBeneficiary, taxAmount);
         } else {
@@ -101,7 +102,7 @@ contract MintClubBond is MintClubFactory {
         reserveBalance[tokenAddress] -= (refundAmount + taxAmount);
         require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
 
-        // Pay tax to the beneficiary / Burn if beneficiary is not set (or abused)
+        // Pay tax to the beneficiary / Send to the default beneficiary if not set (or abused)
         if (beneficiary == address(0) || beneficiary == _msgSender()) {
             RESERVE_TOKEN.transfer(defaultBeneficiary, taxAmount);
         } else {

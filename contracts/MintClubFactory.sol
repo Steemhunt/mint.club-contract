@@ -26,13 +26,18 @@ abstract contract MintClubFactory is Ownable {
     uint256 private constant MAX_SUPPLY_LIMIT = 1000000 * 1e18; // Where it requires 100M HUNT tokens as collateral
 
     event TokenCreated(address tokenAddress);
+    event ImplementationUpdated(address tokenImplementation);
 
     constructor(address implementation) {
-        tokenImplementation = implementation;
+        updateTokenImplementation(implementation);
     }
 
+    // NOTE: This won't change the implementation of tokens that already created
     function updateTokenImplementation(address implementation) public onlyOwner {
+        require(implementation != address(0), 'IMPLEMENTATION_CANNOT_BE_NULL');
+
         tokenImplementation = implementation;
+        emit ImplementationUpdated(tokenImplementation);
     }
 
     // REF: https://github.com/optionality/clone-factory
@@ -48,6 +53,7 @@ abstract contract MintClubFactory is Ownable {
     }
 
     function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) external returns (address) {
+        require(maxTokenSupply > 0, 'MAX_SUPPLY_MUST_BE_POSITIVE');
         require(maxTokenSupply <= MAX_SUPPLY_LIMIT, 'MAX_SUPPLY_LIMIT_EXCEEDED');
 
         address tokenAddress = _createClone(tokenImplementation);

@@ -48,6 +48,11 @@ contract MintClubBond is MintClubFactory {
         return MintClubToken(tokenAddress).totalSupply();
     }
 
+    function createAndBuy(string memory name, string memory symbol, uint256 maxTokenSupply, uint256 reserveAmount, address beneficiary) external {
+        address newToken = createToken(name, symbol, maxTokenSupply);
+        buy(newToken, reserveAmount, 0, beneficiary);
+    }
+
     /**
      * @dev Use the simplest bonding curve (y = x) as we can adjust total supply of reserve tokens to adjust slope
      * Price = SLOPE * totalSupply = totalSupply (where slope = 1)

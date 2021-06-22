@@ -14,6 +14,16 @@ contract('MintClubBond', function(accounts) {
   const TOTAL_RESERVE_SUPPLY = ORIGINAL_BALANCE_A.add(ORIGINAL_BALANCE_B);
   const MAX_SUPPLY = new BN('1000000');
 
+  const BENEFICIARY = '0x32A935f79ce498aeFF77Acd2F7f35B3aAbC31a2D';
+  const DEFAULT_BENEFICIARY = '0x82CA6d313BffE56E9096b16633dfD414148D66b1';
+
+  // We need to put a little bit more Reserve Tokens than the table values due to 0.3% buy tax
+  const calculateReserveWithTax = function(reserveAmount) {
+    const reserveWithTax = ether(reserveAmount).mul(new BN('1000')).div(new BN('997'));
+
+    return [reserveWithTax, reserveWithTax.sub(ether(reserveAmount))]; // return [reserve, tax]
+  };
+
   beforeEach(async function() {
     this.reserveToken = await MintClubToken.new();
     await this.reserveToken.init('Reserve Token', 'RESERVE');
@@ -24,8 +34,8 @@ contract('MintClubBond', function(accounts) {
     const tokenImplimentation = await MintClubToken.new();
     this.bond = await MintClubBond.new(this.reserveToken.address, tokenImplimentation.address);
 
-    this.receipt = await this.bond.createToken('New Token', 'NEW', ether(MAX_SUPPLY));
-    this.token = await MintClubToken.at(this.receipt.logs[1].args.tokenAddress);
+    const receipt = await this.bond.createToken('New Token', 'NEW', ether(MAX_SUPPLY));
+    this.token = await MintClubToken.at(receipt.logs[1].args.tokenAddress);
 
     await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: alice });
     await this.reserveToken.approve(this.bond.address, MAX_UINT256, { from: bob });
@@ -50,6 +60,44 @@ contract('MintClubBond', function(accounts) {
     expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal('0');
   });
 
+  describe('createAndBuy', function() {
+    beforeEach(async function() {
+      const values = calculateReserveWithTax('500000');
+      this.reserveWithTax = values[0];
+      this.tax = values[1];
+
+      // Create and buy 500,000 MINT worth of tokens in the beginning
+      const receipt = await this.bond.createAndBuy('New Token 2', 'NEW2', ether(MAX_SUPPLY), this.reserveWithTax, BENEFICIARY, { from: alice });
+      const tokenAddress = receipt.logs[1].args.tokenAddress;
+      this.token = await MintClubToken.at(tokenAddress);
+    });
+
+    it('has correct pool reserve balance', async function() {
+      expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal(ether('500000'));
+    });
+
+    it('has correct total supply', async function() {
+      expect(await this.token.totalSupply()).to.be.bignumber.equal(ether('1000'));
+    });
+
+    it('increases the price per token', async function() {
+      expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal(ether('1000'));
+    });
+
+    it('gives user a correct balance', async function() {
+      expect(await this.token.balanceOf(alice)).to.be.bignumber.equal(ether('1000'));
+    });
+
+    it('reduces the reserve token balance of user', async function() {
+      const newBalance = ether(ORIGINAL_BALANCE_A).sub(this.reserveWithTax);
+      expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(newBalance);
+    });
+
+    it('gives beneficiary comission', async function() {
+      expect(await this.reserveToken.balanceOf(BENEFICIARY)).to.be.bignumber.equal(this.tax);
+    });
+  }); // END: createAndBuy
+
   /**
    * REF: Price calculation
    * https://docs.google.com/spreadsheets/d/1BbkFrhD3R7waPPw8ZmY5qHrJIe-umJksnsJRsNGRTl4/edit?usp=sharing
@@ -70,15 +118,6 @@ contract('MintClubBond', function(accounts) {
     [ '800000'   , '800000'  , '320000000000' ],
     [ '1000000'  , '1000000' , '500000000000' ] // 500B = $2M
   ];
-  const BENEFICIARY = '0x32A935f79ce498aeFF77Acd2F7f35B3aAbC31a2D';
-  const DEFAULT_BENEFICIARY = '0x82CA6d313BffE56E9096b16633dfD414148D66b1';
-
-  // We need to put a little bit more Reserve Tokens than the table values due to 0.3% buy tax
-  const calculateReserveWithTax = function(reserveAmount) {
-    const reserveWithTax = ether(reserveAmount).mul(new BN('1000')).div(new BN('997'));
-
-    return [reserveWithTax, reserveWithTax.sub(ether(reserveAmount))];
-  };
 
   describe('buy', function() {
     for (let i = 0; i < TABLE.length; i++) {

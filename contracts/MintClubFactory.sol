@@ -52,7 +52,7 @@ abstract contract MintClubFactory is Ownable {
         }
     }
 
-    function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) external returns (address) {
+    function createToken(string memory name, string memory symbol, uint256 maxTokenSupply) public returns (address) {
         require(maxTokenSupply > 0, 'MAX_SUPPLY_MUST_BE_POSITIVE');
         require(maxTokenSupply <= MAX_SUPPLY_LIMIT, 'MAX_SUPPLY_LIMIT_EXCEEDED');
 

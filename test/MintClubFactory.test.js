@@ -18,10 +18,15 @@ contract('MintClubFactory', function(accounts) {
 
   describe('creation', function() {
     it('factory can create tokens', async function() {
-      expectEvent(this.receipt, 'TokenCreated', { tokenAddress: this.token.address });
-      expect(await this.token.name()).to.equal('New Token');
-      expect(await this.token.symbol()).to.equal('NEW');
-      expect(await this.token.totalSupply()).to.be.bignumber.equal('0');
+      const name = await this.token.name();
+      const symbol = await this.token.symbol();
+      const totalSupply = await this.token.totalSupply();
+      const maxTokenSupply = await this.factory.maxSupply(this.token.address);
+
+      expect(name).to.equal('New Token');
+      expect(symbol).to.equal('NEW');
+      expect(totalSupply).to.be.bignumber.equal('0');
+      expectEvent(this.receipt, 'TokenCreated', { tokenAddress: this.token.address, name: name, symbol: symbol, maxTokenSupply: maxTokenSupply });
     });
 
     it('sets owner of the token as factory', async function() {

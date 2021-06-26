@@ -23,6 +23,9 @@ contract MintClubBond is MintClubFactory {
     MintClubToken private RESERVE_TOKEN; // Any IERC20
     address public defaultBeneficiary;
 
+    event Buy(address tokenAddress, address buyer, uint256 amountMinted, uint256 reserveAmount);
+    event Sell(address tokenAddress, address seller, uint256 amountBurned, uint256 refundAmount);
+
     constructor(address baseToken, address implementation) MintClubFactory(implementation) {
         RESERVE_TOKEN = MintClubToken(baseToken);
         defaultBeneficiary = address(0x82CA6d313BffE56E9096b16633dfD414148D66b1);
@@ -94,6 +97,8 @@ contract MintClubBond is MintClubFactory {
         } else {
             RESERVE_TOKEN.transferFrom(_msgSender(), beneficiary, taxAmount);
         }
+
+        emit Buy(tokenAddress, _msgSender(), rewardTokens, reserveAmount);
     }
 
     function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund, address beneficiary) public {
@@ -113,5 +118,7 @@ contract MintClubBond is MintClubFactory {
         } else {
             RESERVE_TOKEN.transfer(beneficiary, taxAmount);
         }
+
+        emit Sell(tokenAddress, _msgSender(), tokenAmount, refundAmount);
     }
 }

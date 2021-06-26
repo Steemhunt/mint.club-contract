@@ -25,7 +25,7 @@ abstract contract MintClubFactory is Ownable {
     mapping (address => uint256) public maxSupply;
     uint256 private constant MAX_SUPPLY_LIMIT = 1000000 * 1e18; // Where it requires 100M HUNT tokens as collateral
 
-    event TokenCreated(address tokenAddress);
+    event TokenCreated(address tokenAddress, string name, string symbol, uint256 maxTokenSupply);
     event ImplementationUpdated(address tokenImplementation);
 
     constructor(address implementation) {
@@ -63,7 +63,7 @@ abstract contract MintClubFactory is Ownable {
         tokens.push(tokenAddress);
         maxSupply[tokenAddress] = maxTokenSupply;
 
-        emit TokenCreated(tokenAddress);
+        emit TokenCreated(tokenAddress, name, symbol, maxTokenSupply);
 
         return tokenAddress;
     }

@@ -60,12 +60,12 @@ contract MintClubBond is MintClubFactory {
      * @dev Use the simplest bonding curve (y = x) as we can adjust total supply of reserve tokens to adjust slope
      * Price = SLOPE * totalSupply = totalSupply (where slope = 1)
      */
-
     function getMintReward(address tokenAddress, uint256 reserveAmount) public view _checkBondExists(tokenAddress) returns (uint256, uint256) {
         uint256 taxAmount = reserveAmount * BUY_TAX / MAX_TAX;
-        uint256 toMint = Math.floorSqrt(2 * 1e18 * ((reserveAmount - taxAmount) + reserveBalance[tokenAddress]));
+        uint256 newSupply = Math.floorSqrt(2 * 1e18 * ((reserveAmount - taxAmount) + reserveBalance[tokenAddress]));
+        uint256 toMint = newSupply - MintClubToken(tokenAddress).totalSupply();
 
-        require(MintClubToken(tokenAddress).totalSupply() + toMint <= maxSupply[tokenAddress], "EXCEEDED_MAX_SUPPLY");
+        require(newSupply <= maxSupply[tokenAddress], "EXCEEDED_MAX_SUPPLY");
 
         return (toMint, taxAmount);
     }

@@ -18,10 +18,13 @@ contract('MintClubBond', function(accounts) {
   const DEFAULT_BENEFICIARY = '0x82CA6d313BffE56E9096b16633dfD414148D66b1';
 
   // We need to put a little bit more Reserve Tokens than the table values due to 0.3% buy tax
-  const calculateReserveWithTax = function(reserveAmount) {
-    const reserveWithTax = ether(reserveAmount).mul(new BN('1000')).div(new BN('997'));
+  const calculateReserveWithTax = function(reserveAmount, inEther = false) {
+    if (!inEther) {
+      reserveAmount = ether(reserveAmount);
+    }
+    const reserveWithTax = reserveAmount.mul(new BN('1000')).div(new BN('997'));
 
-    return [reserveWithTax, reserveWithTax.sub(ether(reserveAmount))]; // return [reserve, tax]
+    return [reserveWithTax, reserveWithTax.sub(reserveAmount)]; // return [reserve, tax]
   };
 
   beforeEach(async function() {
@@ -164,6 +167,31 @@ contract('MintClubBond', function(accounts) {
             reserveAmount: this.reserveWithTax
           });
         });
+
+        if (i < TABLE.length - 2) { // Prevent EXCEEDED_MAX_SUPPLY
+          describe(`another purchase -> up to ${TABLE[i + 1][0]} tokens`, function() {
+            beforeEach(async function() {
+              const values = calculateReserveWithTax(ether(TABLE[i + 1][2]).sub(ether(TABLE[i][2])), true);
+              await this.bond.buy(this.token.address, values[0], 0, BENEFICIARY, { from: alice });
+            });
+
+            it('has correct pool reserve balance', async function() {
+              expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal(ether(TABLE[i + 1][2]));
+            });
+
+            it('has correct total supply', async function() {
+              expect(await this.token.totalSupply()).to.be.bignumber.equal(ether(TABLE[i + 1][0]));
+            });
+
+            it('increases the price per token', async function() {
+              expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal(ether(TABLE[i + 1][1]));
+            });
+
+            it('gives user a correct balance', async function() {
+              expect(await this.token.balanceOf(alice)).to.be.bignumber.equal(ether(TABLE[i + 1][0]));
+            });
+          });
+        }
       });
     }
 
@@ -186,21 +214,20 @@ contract('MintClubBond', function(accounts) {
         expect(await this.reserveToken.balanceOf(DEFAULT_BENEFICIARY)).to.be.bignumber.equal(ether('0.003')); // 0.3%
       });
 
-      it('should revert if minReward is not satisfied', async function() {
-        // Pick a random row from price table [supply, price, reserve]
-        const random = TABLE[Math.floor(Math.random() * TABLE.length)];
+      it('should revert if minReward is not satisfied on buy', async function() {
+        const buyAmount = calculateReserveWithTax('5000')[0];
 
-        const [reserveAmount, ] = calculateReserveWithTax(random[2]);
-        expectRevert(
-          this.bond.buy(this.token.address, reserveAmount, ether(random[0]).addn(1), BENEFICIARY, { from: alice }),
+        // 100 tokens = 5000 MINT
+        await expectRevert(
+          this.bond.buy(this.token.address, buyAmount, ether('100').addn(1), BENEFICIARY, { from: alice }),
           'SLIPPAGE_LIMIT_EXCEEDED'
         );
 
         // Should not revert
-        this.bond.buy(this.token.address, reserveAmount, ether(random[0]), BENEFICIARY, { from: alice });
+        await this.bond.buy(this.token.address, buyAmount, ether('100'), BENEFICIARY, { from: alice });
       });
-    })
-  });
+    }); // edge cases
+  }); // buy
 
   describe('sell', function() {
     for (let i = TABLE.length - 1; i > 0; i--) {
@@ -257,15 +284,14 @@ contract('MintClubBond', function(accounts) {
 
     describe(`edge cases`, function() {
       beforeEach(async function() {
-        // Pick a random row from price table [supply, price, reserve]
-        this.random = TABLE[Math.floor(Math.random() * TABLE.length)];
+        this.row = TABLE[TABLE.length - 2];
 
-        const buyAmount = calculateReserveWithTax(this.random[2])[0];
+        const buyAmount = calculateReserveWithTax(this.row[2])[0];
         await this.bond.buy(this.token.address, buyAmount, 0, BENEFICIARY, { from: alice });
         this.buyAmountAfterTax = await this.bond.reserveBalance(this.token.address); // 0.997
         await this.token.approve(this.bond.address, MAX_UINT256, { from: alice });
 
-        this.balance = await this.token.balanceOf(alice); // should be this.random[0]
+        this.balance = await this.token.balanceOf(alice); // should be this.row[0]
         this.sellTax = this.buyAmountAfterTax.mul(new BN('13')).div(new BN('1000')); // 1.3% sell tax
       });
 
@@ -273,12 +299,12 @@ contract('MintClubBond', function(accounts) {
         await this.bond.buy(this.token.address, ether('1.00'), 0, BENEFICIARY, { from: bob }); // To prevent tokenSupply < tokenAmount (reverting on getBurnRefund)
 
         await expectRevert(
-          this.bond.sell(this.token.address, ether(this.random[0]).addn(1), 0, BENEFICIARY, { from: alice }),
+          this.bond.sell(this.token.address, ether(this.row[0]).addn(1), 0, BENEFICIARY, { from: alice }),
           'VM Exception while processing transaction: revert ERC20: burn amount exceeds balance',
         );
 
         // Should not revert
-        await this.bond.sell(this.token.address, ether(this.random[0]), 0, BENEFICIARY, { from: alice });
+        await this.bond.sell(this.token.address, ether(this.row[0]), 0, BENEFICIARY, { from: alice });
       });
 
       it('send fee to default beneficiary if beneficiary is not set', async function() {
@@ -287,8 +313,8 @@ contract('MintClubBond', function(accounts) {
         expect(await this.reserveToken.balanceOf(DEFAULT_BENEFICIARY)).to.be.bignumber.equal(this.sellTax); // 1.3%
       });
 
-      it('should revert if minReward is not satisfied', async function() {
-        expectRevert(
+      it('should revert if minReward is not satisfied on sell', async function() {
+        await expectRevert(
           this.bond.sell(this.token.address, this.balance, this.buyAmountAfterTax.sub(this.sellTax).addn(1), BENEFICIARY, { from: alice }),
           'SLIPPAGE_LIMIT_EXCEEDED'
         );

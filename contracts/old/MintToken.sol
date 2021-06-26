@@ -1,10 +1,12 @@
+// DEPLOYED contract: 0x1f3Af095CDa17d63cad238358837321e95FC5915
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.3;
 
-import "./lib/ERC20Initializable.sol";
+import "../lib/ERC20Initializable.sol";
 
-contract MintClubToken is ERC20Initializable {
+contract MintToken is ERC20Initializable { // Deployed as MintClubToken
     bool private _initialized; // false by default
     address private _owner; // Ownable is implemented manually to meke it compatible with `initializable`
 
@@ -31,7 +33,7 @@ contract MintClubToken is ERC20Initializable {
         _;
     }
 
-    function renounceOwnership() public onlyOwner {
+    function renounceOwnership() public virtual onlyOwner {
         emit OwnershipTransferred(_owner, address(0));
         _owner = address(0);
     }
@@ -40,11 +42,11 @@ contract MintClubToken is ERC20Initializable {
         _mint(to, amount);
     }
 
-    // NOTE:
-    // Disable direct burn function call because it can affect on bonding curve
-    // Users can just send the tokens to the token contract address
-    // for the same burning effect without changing the totalSupply
-    function burnFrom(address account, uint256 amount) public onlyOwner {
+    function burn(uint256 amount) public virtual {
+        _burn(_msgSender(), amount);
+    }
+
+    function burnFrom(address account, uint256 amount) public virtual {
         uint256 currentAllowance = allowance(account, _msgSender());
         require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
         _approve(account, _msgSender(), currentAllowance - amount);

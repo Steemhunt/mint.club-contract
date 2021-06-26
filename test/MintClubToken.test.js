@@ -56,21 +56,22 @@ contract('MintClubToken', function(accounts) {
   });
 
   describe('burning', function() {
-    it('holders can burn their tokens', async function() {
+     beforeEach(async function() {
       await this.token.mint(other, amount, { from: deployer });
+      await this.token.approve(deployer, amount, { from: other });
+    });
 
-      const receipt = await this.token.burn(amount.subn(1), { from: other });
+    it('only contract owner can burn their tokens', async function() {
+      const receipt = await this.token.burnFrom(other, amount.subn(1), { from: deployer });
       expectEvent(receipt, 'Transfer', { from: other, to: ZERO_ADDRESS, value: amount.subn(1) });
 
       expect(await this.token.balanceOf(other)).to.be.bignumber.equal('1');
     });
 
-    it("users cannot burn others' tokens", async function() {
-      await this.token.mint(other, amount, { from: deployer });
-
-      expectRevert(
-        this.token.burnFrom(other, amount.subn(1), { from: deployer }),
-        'ERC20: burn amount exceeds allowance'
+    it("users (not contract owner) cannot burn their own token", async function() {
+      await expectRevert(
+        this.token.burnFrom(other, amount.subn(1), { from: other }),
+        'VM Exception while processing transaction: revert Ownable: caller is not the owner'
       );
 
       expect(await this.token.balanceOf(other)).to.be.bignumber.equal(amount);

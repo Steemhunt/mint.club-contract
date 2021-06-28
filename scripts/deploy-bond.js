@@ -10,7 +10,7 @@ async function main() {
   const deployer = accounts[0].address;
   console.log(`Deploy from account: ${deployer}`);
 
-  const BASE_TOKEN = ''; // TODO: MINT token as a reserve token
+  const BASE_TOKEN = '0x1f3Af095CDa17d63cad238358837321e95FC5915'; // MINT Token mainnet
 
   // MARK: - Deploy MintClubToken implementation
   const MintClubToken = await hre.ethers.getContractFactory('MintClubToken');

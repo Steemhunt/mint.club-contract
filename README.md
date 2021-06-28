@@ -1,6 +1,13 @@
 # Mint Club
 Smart contracts for mint.club
 
+## Deployed on Binance Smart Chain (BSC)
+```
+MINT token: 0x1f3Af095CDa17d63cad238358837321e95FC5915
+MintClubToken implementation: 0x19128727a8a7A6276E17a1d1ACB224B4b711e4Eb
+MintClubBond contract: 0xc6f6e7b8e0AbCdE5c8c553803cD904008465bBE9
+```
+
 ## Run Tests
 ```bash
 npx hardhat test
@@ -11,7 +18,7 @@ npx hardhat test
 HARDHAT_NETWORK=goerli node scripts/initial-deploy.js
 
 # Verify source code on Etherscan
-npx hardhat verify --network goerli {contract address}
+npx hardhat verify --network goerli {contract address} "parameter 1" "parameter 2"
 ```
 
 ## Gas Consumption

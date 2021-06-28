@@ -279,6 +279,42 @@ contract('MintClubBond', function(accounts) {
             refundAmount: this.reserveRefunded.sub(this.sellTax)
           });
         });
+
+        if (i > 2) {
+          describe(`another sell -> to ${TABLE[i - 1][0]} tokens`, function() {
+            beforeEach(async function() {
+              this.aliceBalanceBeforeSell2 = await this.reserveToken.balanceOf(alice);
+
+              const sellAmount = ether(new BN(TABLE[i - 1][0]).sub(new BN(TABLE[i - 2][0])));
+              await this.bond.sell(this.token.address, sellAmount, 0, BENEFICIARY, { from: alice });
+            });
+
+            it('has correct pool reserve balance', async function() {
+              expect(await this.bond.reserveBalance(this.token.address)).to.be.bignumber.equal(ether(TABLE[i - 2][2]));
+            });
+
+            it('has correct total supply', async function() {
+              expect(await this.token.totalSupply()).to.be.bignumber.equal(ether(TABLE[i - 2][0]));
+            });
+
+            it('decreases the price per token', async function() {
+              expect(await this.bond.currentPrice(this.token.address)).to.be.bignumber.equal(ether(TABLE[i - 2][1]));
+            });
+
+            it('reduces the balance of user', async function() {
+              expect(await this.token.balanceOf(alice)).to.be.bignumber.equal(ether(TABLE[i - 2][0]));
+            });
+
+            it('increase the reserve token balance of user', async function () {
+              const refundAmount = ether(TABLE[i - 1][2]).sub(ether(TABLE[i - 2][2]));
+              const sellTax = refundAmount.mul(new BN('13')).div(new BN('1000')); // 1.3% sell tax
+
+              expect(await this.reserveToken.balanceOf(alice)).to.be.bignumber.equal(
+                this.aliceBalanceBeforeSell2.add(refundAmount).sub(sellTax)
+              );
+            });
+          });
+        }
       });
     }
 

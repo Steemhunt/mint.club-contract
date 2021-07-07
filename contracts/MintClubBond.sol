@@ -92,13 +92,13 @@ contract MintClubBond is MintClubFactory {
         MintClubToken(tokenAddress).mint(_msgSender(), rewardTokens);
 
         // Pay tax to the beneficiary / Send to the default beneficiary if not set (or abused)
+        address actualBeneficiary = beneficiary;
         if (beneficiary == address(0) || beneficiary == _msgSender()) {
-            RESERVE_TOKEN.transferFrom(_msgSender(), defaultBeneficiary, taxAmount);
-        } else {
-            RESERVE_TOKEN.transferFrom(_msgSender(), beneficiary, taxAmount);
+            actualBeneficiary = defaultBeneficiary;
         }
+        RESERVE_TOKEN.transferFrom(_msgSender(), actualBeneficiary, taxAmount);
 
-        emit Buy(tokenAddress, _msgSender(), rewardTokens, reserveAmount, beneficiary, taxAmount);
+        emit Buy(tokenAddress, _msgSender(), rewardTokens, reserveAmount, actualBeneficiary, taxAmount);
     }
 
     function sell(address tokenAddress, uint256 tokenAmount, uint256 minRefund, address beneficiary) public {
@@ -113,12 +113,12 @@ contract MintClubBond is MintClubFactory {
         require(RESERVE_TOKEN.transfer(_msgSender(), refundAmount), "RESERVE_TOKEN_TRANSFER_FAILED");
 
         // Pay tax to the beneficiary / Send to the default beneficiary if not set (or abused)
+        address actualBeneficiary = beneficiary;
         if (beneficiary == address(0) || beneficiary == _msgSender()) {
-            RESERVE_TOKEN.transfer(defaultBeneficiary, taxAmount);
-        } else {
-            RESERVE_TOKEN.transfer(beneficiary, taxAmount);
+            actualBeneficiary = defaultBeneficiary;
         }
+        RESERVE_TOKEN.transfer(actualBeneficiary, taxAmount);
 
-        emit Sell(tokenAddress, _msgSender(), tokenAmount, refundAmount, beneficiary, taxAmount);
+        emit Sell(tokenAddress, _msgSender(), tokenAmount, refundAmount, actualBeneficiary, taxAmount);
     }
 }

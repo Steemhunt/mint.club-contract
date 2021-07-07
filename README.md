@@ -3,8 +3,8 @@ Smart token builder for everyone - [Mint.club](https://mint.club)
 
 ## Deployed on Binance Smart Chain (BSC)
 - MintToken: [0x1f3Af095CDa17d63cad238358837321e95FC5915](https://bscscan.com/token/0x1f3Af095CDa17d63cad238358837321e95FC5915)
-- MintClubBond: [0xb7A541d9Ede1564D8da4532b4277aca76D78aCE7](https://bscscan.com/address/0xb7A541d9Ede1564D8da4532b4277aca76D78aCE7)
-- MintClubToken Implementation: [0x19128727a8a7A6276E17a1d1ACB224B4b711e4Eb](https://bscscan.com/address/0x19128727a8a7A6276E17a1d1ACB224B4b711e4Eb#code)
+- MintClubBond: [0x8BBac0C7583Cc146244a18863E708bFFbbF19975](https://bscscan.com/address/0x8BBac0C7583Cc146244a18863E708bFFbbF19975)
+- MintClubToken Implementation: [0xbA7Be0cb77CB89274196D29F098b2e37168154d4](https://bscscan.com/address/0xbA7Be0cb77CB89274196D29F098b2e37168154d4#code)
 
 ⚠️ Mint.club is not officially launched yet, so the contract addresses can be changed before official launch
 

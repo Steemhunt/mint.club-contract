@@ -164,7 +164,9 @@ contract('MintClubBond', function(accounts) {
             tokenAddress: this.token.address,
             buyer: alice,
             amountMinted: ether(TABLE[i][0]),
-            reserveAmount: this.reserveWithTax
+            reserveAmount: this.reserveWithTax,
+            beneficiary: BENEFICIARY,
+            taxAmount: this.tax
           });
         });
 
@@ -276,7 +278,9 @@ contract('MintClubBond', function(accounts) {
             tokenAddress: this.token.address,
             seller: alice,
             amountBurned: this.sellAmount,
-            refundAmount: this.reserveRefunded.sub(this.sellTax)
+            refundAmount: this.reserveRefunded.sub(this.sellTax),
+            beneficiary: BENEFICIARY,
+            taxAmount: this.sellTax
           });
         });
 

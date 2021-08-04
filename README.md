@@ -5,6 +5,7 @@ Smart token builder for everyone - [Mint.club](https://mint.club)
 - MintToken: [0x1f3Af095CDa17d63cad238358837321e95FC5915](https://bscscan.com/token/0x1f3Af095CDa17d63cad238358837321e95FC5915)
 - MintClubBond: [0x8BBac0C7583Cc146244a18863E708bFFbbF19975](https://bscscan.com/address/0x8BBac0C7583Cc146244a18863E708bFFbbF19975)
 - MintClubToken Implementation: [0xbA7Be0cb77CB89274196D29F098b2e37168154d4](https://bscscan.com/address/0xbA7Be0cb77CB89274196D29F098b2e37168154d4#code)
+- MintClubZap: [0x1be3594f756C6725Fe99741077DEEB87f531B31F](https://bscscan.com/address/0x1be3594f756C6725Fe99741077DEEB87f531B31F)
 
 ⚠️ Mint.club is not officially launched yet, so the contract addresses can be changed before official launch
 
@@ -16,6 +17,8 @@ npx hardhat test
 
 ## Deploy
 ```bash
+npx hardhat compile
+
 HARDHAT_NETWORK=goerli node scripts/initial-deploy.js
 
 # Verify source code on Etherscan

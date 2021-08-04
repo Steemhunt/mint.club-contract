@@ -26,7 +26,7 @@ require("@nomiclabs/hardhat-etherscan");
  */
 module.exports = {
   solidity: {
-    version: '0.8.3',
+    version: '0.8.6',
     settings: {
       optimizer: {
         enabled: true, // argv.enableGasReport || argv.compileMode === 'production',

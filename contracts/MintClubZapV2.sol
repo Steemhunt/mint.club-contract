@@ -14,7 +14,7 @@ import "./lib/IWETH.sol";
 * @title MintClubZap extension contract
 */
 
-contract MintClubZap is Context {
+contract MintClubZapV2 is Context {
     using SafeERC20 for IERC20;
 
     // Pancakeswap Router
@@ -47,7 +47,7 @@ contract MintClubZap is Context {
         return BOND.getMintReward(to, mintAmount);
     }
 
-    function zapInBNB(address to, uint256 minAmountOut, address beneficiary) external payable {
+    function zapInBNB(address to, uint256 minAmountOut, address beneficiary) public payable {
         // First, wrap BNB to WBNB
         IWETH(WBNB_CONTRACT).deposit{value: msg.value}();
 
@@ -58,7 +58,7 @@ contract MintClubZap is Context {
         _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, beneficiary);
     }
 
-    function zapIn(address from, address to, uint256 amount, uint256 minAmountOut, address beneficiary) external {
+    function zapIn(address from, address to, uint256 amount, uint256 minAmountOut, address beneficiary) public {
         // First, pull tokens to this contract
         IERC20 token = IERC20(from);
         require(token.allowance(_msgSender(), address(this)) >= amount, 'NOT_ENOUGH_ALLOWANCE');
@@ -74,6 +74,20 @@ contract MintClubZap is Context {
 
         // Finally, buy target tokens with swapped MINT
         _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, beneficiary);
+    }
+
+    function createAndZapIn(string memory name, string memory symbol, uint256 maxTokenSupply, address token, uint256 tokenAmount, address beneficiary) external {
+        address newToken = BOND.createToken(name, symbol, maxTokenSupply);
+
+        // We can ignore `minAmountOut` because no front-running is possible here
+        zapIn(token, newToken, tokenAmount, 0, beneficiary);
+    }
+
+    function createAndZapInBNB(string memory name, string memory symbol, uint256 maxTokenSupply, address beneficiary) external payable {
+        address newToken = BOND.createToken(name, symbol, maxTokenSupply);
+
+        // We can ignore `minAmountOut` because no front-running is possible here
+        zapInBNB(newToken, 0, beneficiary);
     }
 
     function _buyMintClubTokenAndSend(address tokenAddress, uint256 mintAmount, uint256 minAmountOut, address beneficiary) internal {

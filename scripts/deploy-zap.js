@@ -10,12 +10,12 @@ async function main() {
   const deployer = accounts[0].address;
   console.log(`Deploy from account: ${deployer}`);
 
-  const MintClubZap = await hre.ethers.getContractFactory('MintClubZap');
-  const zap = await MintClubZap.deploy();
+  const MintClubZapV2 = await hre.ethers.getContractFactory('MintClubZapV2');
+  const zap = await MintClubZapV2.deploy();
   await zap.deployed();
 
   console.log('---');
-  console.log(`MintClubZap contract: ${zap.address}`);
+  console.log(`MintClubZapV2 contract: ${zap.address}`);
 };
 
 main()

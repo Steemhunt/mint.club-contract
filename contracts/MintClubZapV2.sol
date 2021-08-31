@@ -11,7 +11,7 @@ import "./lib/IMintClubBond.sol";
 import "./lib/IWETH.sol";
 
 /**
-* @title MintClubZap extension contract
+* @title MintClubZapV2 extension contract (2.1.0)
 */
 
 contract MintClubZapV2 is Context {
@@ -76,18 +76,17 @@ contract MintClubZapV2 is Context {
         _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, beneficiary);
     }
 
-    function createAndZapIn(string memory name, string memory symbol, uint256 maxTokenSupply, address token, uint256 tokenAmount, address beneficiary) external {
+    function createAndZapIn(string memory name, string memory symbol, uint256 maxTokenSupply, address token, uint256 tokenAmount, uint256 minAmountOut, address beneficiary) external {
         address newToken = BOND.createToken(name, symbol, maxTokenSupply);
 
-        // We can ignore `minAmountOut` because no front-running is possible here
-        zapIn(token, newToken, tokenAmount, 0, beneficiary);
+        // We need `minAmountOut` here token->MINT can be front ran and slippage my happen
+        zapIn(token, newToken, tokenAmount, minAmountOut, beneficiary);
     }
 
-    function createAndZapInBNB(string memory name, string memory symbol, uint256 maxTokenSupply, address beneficiary) external payable {
+    function createAndZapInBNB(string memory name, string memory symbol, uint256 maxTokenSupply, uint256 minAmountOut, address beneficiary) external payable {
         address newToken = BOND.createToken(name, symbol, maxTokenSupply);
 
-        // We can ignore `minAmountOut` because no front-running is possible here
-        zapInBNB(newToken, 0, beneficiary);
+        zapInBNB(newToken, minAmountOut, beneficiary);
     }
 
     function _buyMintClubTokenAndSend(address tokenAddress, uint256 mintAmount, uint256 minAmountOut, address beneficiary) internal {

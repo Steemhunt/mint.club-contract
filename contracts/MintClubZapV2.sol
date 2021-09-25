@@ -27,6 +27,15 @@ contract MintClubZapV2 is Context {
     address private constant MINT_CONTRACT = address(0x1f3Af095CDa17d63cad238358837321e95FC5915);
     address private constant WBNB_CONTRACT = address(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
 
+    // MARK: - Testnet configs
+
+    // IUniswapV2Factory private constant PANCAKE_FACTORY = IUniswapV2Factory(0x6725F303b657a9451d8BA641348b6761A6CC7a17);
+    // IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
+    // IMintClubBond private constant BOND = IMintClubBond(0xB9B492B5D470ae0eB2BB07a87062EC97615d8b09);
+    // uint256 private constant DEAD_LINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    // address private constant MINT_CONTRACT = address(0x4d24BF63E5d6E03708e2DFd5cc8253B3f22FE913);
+    // address private constant WBNB_CONTRACT = address(0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd);
+
     constructor() {
         // Approve infinite MINT tokens spendable by bond contract
         // MINT will be stored temporarily during the swap transaction

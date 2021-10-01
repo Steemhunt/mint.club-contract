@@ -42,18 +42,32 @@ contract MintClubZapV2 is Context {
         _approveToken(MINT_CONTRACT, address(BOND));
     }
 
-    function getAmountOut(address from, address to, uint256 amount) external view returns (uint256 tokenToReceive, uint256 mintTokenTaxAmount) {
+    // Renamed getAmountOut -> estimateZapIn
+    function estimateZapIn(address from, address to, uint256 amount) external view returns (uint256 tokenToReceive, uint256 mintTokenTaxAmount) {
         uint256 mintAmount;
 
         if (from == MINT_CONTRACT) {
             mintAmount = amount;
         } else {
-            address[] memory path = _getPath(from);
+            address[] memory path = _getPathToMint(from);
 
             mintAmount = PANCAKE_ROUTER.getAmountsOut(amount, path)[path.length - 1];
         }
 
         return BOND.getMintReward(to, mintAmount);
+    }
+
+    function estimateZapOut(address from, address to, uint256 amount) external view returns (uint256 amountToReceive, uint256 mintTokenTaxAmount) {
+        uint256 mintToRefund;
+        (mintToRefund, mintTokenTaxAmount) = BOND.getBurnRefund(from, amount);
+
+        if (to == MINT_CONTRACT) {
+            amountToReceive = mintToRefund;
+        } else {
+            address[] memory path = _getPathFromMint(to);
+
+            amountToReceive = PANCAKE_ROUTER.getAmountsOut(mintToRefund, path)[path.length - 1];
+        }
     }
 
     function zapInBNB(address to, uint256 minAmountOut, address beneficiary) public payable {
@@ -67,18 +81,18 @@ contract MintClubZapV2 is Context {
         _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, beneficiary);
     }
 
-    function zapIn(address from, address to, uint256 amount, uint256 minAmountOut, address beneficiary) public {
+    function zapIn(address from, address to, uint256 amountIn, uint256 minAmountOut, address beneficiary) public {
         // First, pull tokens to this contract
         IERC20 token = IERC20(from);
-        require(token.allowance(_msgSender(), address(this)) >= amount, 'NOT_ENOUGH_ALLOWANCE');
-        IERC20(from).safeTransferFrom(_msgSender(), address(this), amount);
+        require(token.allowance(_msgSender(), address(this)) >= amountIn, 'NOT_ENOUGH_ALLOWANCE');
+        IERC20(from).safeTransferFrom(_msgSender(), address(this), amountIn);
 
         // Swap to MINT if necessary
         uint256 mintAmount;
         if (from == MINT_CONTRACT) {
-            mintAmount = amount;
+            mintAmount = amountIn;
         } else {
-            mintAmount = _swap(from, MINT_CONTRACT, amount);
+            mintAmount = _swap(from, MINT_CONTRACT, amountIn);
         }
 
         // Finally, buy target tokens with swapped MINT
@@ -98,8 +112,44 @@ contract MintClubZapV2 is Context {
         zapInBNB(newToken, minAmountOut, beneficiary);
     }
 
+    function zapOut(address from, address to, uint256 amountIn, uint256 minAmountOut, address beneficiary) external {
+        uint256 mintAmount = _receiveAndSwapToMint(from, amountIn, beneficiary);
+
+        // Swap to MINT if necessary
+        IERC20 toToken;
+        uint256 amountOut;
+        if (to == MINT_CONTRACT) {
+            toToken = IERC20(MINT_CONTRACT);
+            amountOut = mintAmount;
+        } else {
+            toToken = IERC20(to);
+            amountOut = _swap(MINT_CONTRACT, to, mintAmount);
+        }
+
+        // Check slippage limit
+        require(amountOut >= minAmountOut, 'ZAP_SLIPPAGE_LIMIT_EXCEEDED');
+
+        // Send the token to the user
+        require(toToken.transfer(_msgSender(), amountOut), 'BALANCE_TRANSFER_FAILED');
+    }
+
+    function zapOutBNB(address from, uint256 amountIn, uint256 minAmountOut, address beneficiary) external {
+        uint256 mintAmount = _receiveAndSwapToMint(from, amountIn, beneficiary);
+
+        // Swap to MINT to BNB
+        uint256 amountOut = _swap(MINT_CONTRACT, WBNB_CONTRACT, mintAmount);
+        IWETH(WBNB_CONTRACT).withdraw(amountOut);
+
+        // Check slippage limit
+        require(amountOut >= minAmountOut, 'ZAP_SLIPPAGE_LIMIT_EXCEEDED');
+
+        // Send BNB to user
+        (bool sent, ) = _msgSender().call{value: amountOut}("");
+        require(sent, "BNB_TRANSFER_FAILED");
+    }
+
     function _buyMintClubTokenAndSend(address tokenAddress, uint256 mintAmount, uint256 minAmountOut, address beneficiary) internal {
-        // Finally, buy target tokens with swapped MINT
+        // Finally, buy target tokens with swapped MINT (can be reverted due to slippage limit)
         BOND.buy(tokenAddress, mintAmount, minAmountOut, beneficiary);
 
         // BOND.buy doesn't return any value, so we need to calculate the purchased amount
@@ -107,7 +157,22 @@ contract MintClubZapV2 is Context {
         require(token.transfer(_msgSender(), token.balanceOf(address(this))), 'BALANCE_TRANSFER_FAILED');
     }
 
-    function _getPath(address from) internal pure returns (address[] memory path) {
+    function _receiveAndSwapToMint(address from, uint256 amountIn, address beneficiary) internal returns (uint256) {
+        // First, pull tokens to this contract
+        IERC20 token = IERC20(from);
+        require(token.allowance(_msgSender(), address(this)) >= amountIn, 'NOT_ENOUGH_ALLOWANCE');
+        IERC20(from).safeTransferFrom(_msgSender(), address(this), amountIn);
+
+        // Sell tokens to MINT
+        // NOTE: ignore minRefund (set as 0) for now, we should check it later on zapOut
+        BOND.sell(from, amountIn, 0, beneficiary);
+        IERC20 mintToken = IERC20(MINT_CONTRACT);
+
+        return mintToken.balanceOf(address(this));
+    }
+
+
+    function _getPathToMint(address from) internal pure returns (address[] memory path) {
         if (from == WBNB_CONTRACT) {
             path = new address[](2);
             path[0] = WBNB_CONTRACT;
@@ -117,6 +182,19 @@ contract MintClubZapV2 is Context {
             path[0] = from;
             path[1] = WBNB_CONTRACT;
             path[2] = MINT_CONTRACT;
+        }
+    }
+
+    function _getPathFromMint(address to) internal pure returns (address[] memory path) {
+        if (to == WBNB_CONTRACT) {
+            path = new address[](2);
+            path[0] = MINT_CONTRACT;
+            path[1] = WBNB_CONTRACT;
+        } else {
+            path = new address[](3);
+            path[0] = MINT_CONTRACT;
+            path[1] = WBNB_CONTRACT;
+            path[2] = to;
         }
     }
 
@@ -143,8 +221,17 @@ contract MintClubZapV2 is Context {
 
         _approveToken(from, address(PANCAKE_ROUTER));
 
-        address[] memory path = _getPath(from);
+        address[] memory path;
 
+        if (to == MINT_CONTRACT) {
+            path = _getPathToMint(from);
+        } else if (from == MINT_CONTRACT) {
+            path = _getPathFromMint(to);
+        } else {
+            revert('INVALID_PATH');
+        }
+
+        // Check if there's a liquidity pool for paths
         // path.length is always 2 or 3
         for (uint8 i = 0; i < path.length - 1; i++) {
             address pair = PANCAKE_FACTORY.getPair(path[i], path[i + 1]);

@@ -7,14 +7,29 @@ interface IMintClubBond {
         address tokenAddress,
         uint256 reserveAmount
     ) external view returns (
-        uint256 toMint,
+        uint256 toMint, // token amount to be minted
         uint256 taxAmount
+    );
+
+    function getBurnRefund(
+        address tokenAddress,
+        uint256 tokenAmount
+    ) external view returns (
+        uint256 mintToRefund,
+        uint256 mintTokenTaxAmount
     );
 
     function buy(
         address tokenAddress,
         uint256 reserveAmount,
         uint256 minReward,
+        address beneficiary
+    ) external;
+
+    function sell(
+        address tokenAddress,
+        uint256 tokenAmount,
+        uint256 minRefund,
         address beneficiary
     ) external;
 

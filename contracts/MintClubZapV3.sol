@@ -14,6 +14,8 @@ import "./lib/IWETH.sol";
 * @title MintClubZapV3 extension contract (3.0.0)
 */
 
+// TODO: Check self referral                     
+
 contract MintClubZapV3 is Context {
     using SafeERC20 for IERC20;
 
@@ -143,6 +145,8 @@ contract MintClubZapV3 is Context {
         // Check slippage limit
         require(amountOut >= minAmountOut, 'ZAP_SLIPPAGE_LIMIT_EXCEEDED');
 
+        // TODO: FIXME!!!!!
+
         // Send BNB to user
         (bool sent, ) = _msgSender().call{value: amountOut}("");
         require(sent, "BNB_TRANSFER_FAILED");
@@ -162,6 +166,11 @@ contract MintClubZapV3 is Context {
         IERC20 token = IERC20(from);
         require(token.allowance(_msgSender(), address(this)) >= amountIn, 'NOT_ENOUGH_ALLOWANCE');
         IERC20(from).safeTransferFrom(_msgSender(), address(this), amountIn);
+
+        // Approve infinitely to this contract
+        if (token.allowance(address(this), address(BOND)) < amountIn) {
+            require(token.approve(address(BOND), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 'APPROVE_FAILED');
+        }
 
         // Sell tokens to MINT
         // NOTE: ignore minRefund (set as 0) for now, we should check it later on zapOut

@@ -14,10 +14,10 @@ import "./lib/IWETH.sol";
 * @title MintClubZapV3 extension contract (3.0.0)
 */
 
-// TODO: Check self referral                     
-
 contract MintClubZapV3 is Context {
     using SafeERC20 for IERC20;
+
+    address private constant DEFAULT_BENEFICIARY = 0x82CA6d313BffE56E9096b16633dfD414148D66b1;
 
     // Pancakeswap Router
     // IUniswapV2Factory private constant PANCAKE_FACTORY = IUniswapV2Factory(0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73);
@@ -82,7 +82,7 @@ contract MintClubZapV3 is Context {
         uint256 mintAmount = _swap(WBNB_CONTRACT, MINT_CONTRACT, msg.value);
 
         // Finally, buy target tokens with swapped MINT
-        _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, beneficiary);
+        _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, _getBeneficiary(beneficiary));
     }
 
     function zapIn(address from, address to, uint256 amountIn, uint256 minAmountOut, address beneficiary) public {
@@ -100,24 +100,24 @@ contract MintClubZapV3 is Context {
         }
 
         // Finally, buy target tokens with swapped MINT
-        _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, beneficiary);
+        _buyMintClubTokenAndSend(to, mintAmount, minAmountOut, _getBeneficiary(beneficiary));
     }
 
     function createAndZapIn(string memory name, string memory symbol, uint256 maxTokenSupply, address token, uint256 tokenAmount, uint256 minAmountOut, address beneficiary) external {
         address newToken = BOND.createToken(name, symbol, maxTokenSupply);
 
         // We need `minAmountOut` here token->MINT can be front ran and slippage my happen
-        zapIn(token, newToken, tokenAmount, minAmountOut, beneficiary);
+        zapIn(token, newToken, tokenAmount, minAmountOut, _getBeneficiary(beneficiary));
     }
 
     function createAndZapInBNB(string memory name, string memory symbol, uint256 maxTokenSupply, uint256 minAmountOut, address beneficiary) external payable {
         address newToken = BOND.createToken(name, symbol, maxTokenSupply);
 
-        zapInBNB(newToken, minAmountOut, beneficiary);
+        zapInBNB(newToken, minAmountOut, _getBeneficiary(beneficiary));
     }
 
     function zapOut(address from, address to, uint256 amountIn, uint256 minAmountOut, address beneficiary) external {
-        uint256 mintAmount = _receiveAndSwapToMint(from, amountIn, beneficiary);
+        uint256 mintAmount = _receiveAndSwapToMint(from, amountIn, _getBeneficiary(beneficiary));
 
         // Swap to MINT if necessary
         IERC20 toToken;
@@ -138,7 +138,7 @@ contract MintClubZapV3 is Context {
     }
 
     function zapOutBNB(address from, uint256 amountIn, uint256 minAmountOut, address beneficiary) external {
-        uint256 mintAmount = _receiveAndSwapToMint(from, amountIn, beneficiary);
+        uint256 mintAmount = _receiveAndSwapToMint(from, amountIn, _getBeneficiary(beneficiary));
 
         // Swap to MINT to BNB
         uint256 amountOut = _swap(MINT_CONTRACT, WBNB_CONTRACT, mintAmount);
@@ -156,7 +156,7 @@ contract MintClubZapV3 is Context {
 
     function _buyMintClubTokenAndSend(address tokenAddress, uint256 mintAmount, uint256 minAmountOut, address beneficiary) internal {
         // Finally, buy target tokens with swapped MINT (can be reverted due to slippage limit)
-        BOND.buy(tokenAddress, mintAmount, minAmountOut, beneficiary);
+        BOND.buy(tokenAddress, mintAmount, minAmountOut, _getBeneficiary(beneficiary));
 
         // BOND.buy doesn't return any value, so we need to calculate the purchased amount
         IERC20 token = IERC20(tokenAddress);
@@ -176,7 +176,7 @@ contract MintClubZapV3 is Context {
 
         // Sell tokens to MINT
         // NOTE: ignore minRefund (set as 0) for now, we should check it later on zapOut
-        BOND.sell(from, amountIn, 0, beneficiary);
+        BOND.sell(from, amountIn, 0, _getBeneficiary(beneficiary));
         IERC20 mintToken = IERC20(MINT_CONTRACT);
 
         return mintToken.balanceOf(address(this));
@@ -258,5 +258,14 @@ contract MintClubZapV3 is Context {
         )[path.length - 1];
 
         require(boughtAmount > 0, 'SWAP_ERROR');
+    }
+
+    // Prevent self referral
+    function _getBeneficiary(address beneficiary) internal view returns (address) {
+        if (beneficiary == address(0) || beneficiary == _msgSender()) {
+           return DEFAULT_BENEFICIARY;
+        } else {
+            return beneficiary;
+        }
     }
 }

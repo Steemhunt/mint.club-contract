@@ -44,6 +44,8 @@ contract MintClubZapV3 is Context {
         _approveToken(MINT_CONTRACT, address(BOND));
     }
 
+    receive() external payable {}
+
     // Renamed getAmountOut -> estimateZapIn
     function estimateZapIn(address from, address to, uint256 amount) external view returns (uint256 tokenToReceive, uint256 mintTokenTaxAmount) {
         uint256 mintAmount;

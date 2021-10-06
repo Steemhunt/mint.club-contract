@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -19,24 +19,23 @@ contract MintClubZapV3 is Context {
 
     address private constant DEFAULT_BENEFICIARY = 0x82CA6d313BffE56E9096b16633dfD414148D66b1;
 
-    // Pancakeswap Router
-    // IUniswapV2Factory private constant PANCAKE_FACTORY = IUniswapV2Factory(0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73);
-    // IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-    // IMintClubBond private constant BOND = IMintClubBond(0x8BBac0C7583Cc146244a18863E708bFFbbF19975);
+    // MARK: - Mainnet configs
 
-    // Unix timestamp after which the transaction will revert.
-    // uint256 private constant DEAD_LINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
-    // address private constant MINT_CONTRACT = address(0x1f3Af095CDa17d63cad238358837321e95FC5915);
-    // address private constant WBNB_CONTRACT = address(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
+    IUniswapV2Factory private constant PANCAKE_FACTORY = IUniswapV2Factory(0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73);
+    IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+    IMintClubBond private constant BOND = IMintClubBond(0x8BBac0C7583Cc146244a18863E708bFFbbF19975);
+    uint256 private constant DEAD_LINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    address private constant MINT_CONTRACT = address(0x1f3Af095CDa17d63cad238358837321e95FC5915);
+    address private constant WBNB_CONTRACT = address(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
 
     // MARK: - Testnet configs
 
-    IUniswapV2Factory private constant PANCAKE_FACTORY = IUniswapV2Factory(0x6725F303b657a9451d8BA641348b6761A6CC7a17);
-    IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
-    IMintClubBond private constant BOND = IMintClubBond(0xB9B492B5D470ae0eB2BB07a87062EC97615d8b09);
-    uint256 private constant DEAD_LINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
-    address private constant MINT_CONTRACT = address(0x4d24BF63E5d6E03708e2DFd5cc8253B3f22FE913);
-    address private constant WBNB_CONTRACT = address(0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd);
+    // IUniswapV2Factory private constant PANCAKE_FACTORY = IUniswapV2Factory(0x6725F303b657a9451d8BA641348b6761A6CC7a17);
+    // IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
+    // IMintClubBond private constant BOND = IMintClubBond(0xB9B492B5D470ae0eB2BB07a87062EC97615d8b09);
+    // uint256 private constant DEAD_LINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
+    // address private constant MINT_CONTRACT = address(0x4d24BF63E5d6E03708e2DFd5cc8253B3f22FE913);
+    // address private constant WBNB_CONTRACT = address(0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd);
 
     constructor() {
         // Approve infinite MINT tokens spendable by bond contract

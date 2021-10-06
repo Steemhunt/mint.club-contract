@@ -12,7 +12,7 @@ import "./MintClubToken.sol";
 * Admin can change the owner address for tokens
 */
 contract Forwarder is Ownable {
-    uint256 public feeRate = 500; // 100 / 10,000 = 5% of bounty is taken when accepted
+    uint256 public feeRate = 500; // 500 / 10,000 = 5% of bounty is taken when accepted
     address public fundAddress = address(0);
 
     // Token => Requester => bountyAmount
@@ -48,7 +48,7 @@ contract Forwarder is Ownable {
         require(pendingBounty[tokenAddress][_msgSender()] >= amount, 'AMOUNT_LIMIT_EXCEEDED');
 
         pendingBounty[tokenAddress][_msgSender()] -= amount;
-        require(MintClubToken(tokenAddress).transfer(_msgSender(), amount), 'TOKEN_TRANSFER_FAILED');
+        require(MintClubToken(tokenAddress).transfer(_msgSender(), amount), 'REFUND_TRANSFER_FAILED');
 
         emit Refund(tokenAddress, _msgSender(), amount);
     }
@@ -58,7 +58,12 @@ contract Forwarder is Ownable {
         require(pendingBounty[tokenAddress][requester] >= amount, 'AMOUNT_LIMIT_EXCEEDED');
 
         pendingBounty[tokenAddress][requester] -= amount;
-        require(MintClubToken(tokenAddress).transfer(_msgSender(), amount), 'TOKEN_TRANSFER_FAILED');
+
+        MintClubToken token = MintClubToken(tokenAddress);
+        uint256 fee = amount * feeRate / 10000;
+
+        require(token.transfer(_msgSender(), amount - fee), 'BOUNTY_TRANSFER_FAILED');
+        require(token.transfer(fundAddress, fee), 'FEE_TRANSFER_FAILED');
 
         emit Accept(tokenAddress, requester, _msgSender(), amount);
     }

@@ -71,7 +71,7 @@ contract('MintClubToken', function(accounts) {
     it("users (not contract owner) cannot burn their own token", async function() {
       await expectRevert(
         this.token.burnFrom(other, amount.subn(1), { from: other }),
-        'VM Exception while processing transaction: revert Ownable: caller is not the owner'
+        'Ownable: caller is not the owner'
       );
 
       expect(await this.token.balanceOf(other)).to.be.bignumber.equal(amount);

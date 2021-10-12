@@ -340,7 +340,7 @@ contract('MintClubBond', function(accounts) {
 
         await expectRevert(
           this.bond.sell(this.token.address, ether(this.row[0]).addn(1), 0, BENEFICIARY, { from: alice }),
-          'VM Exception while processing transaction: revert ERC20: burn amount exceeds balance',
+          'ERC20: burn amount exceeds balance',
         );
 
         // Should not revert

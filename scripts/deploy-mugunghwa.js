@@ -29,7 +29,7 @@ main()
 
 // Deploy:
 // npx hardhat compile && HARDHAT_NETWORK=bsctest node scripts/deploy-mugunghwa.js
-// npx hardhat verify --network bsctest 0x1CF3064C7e92f2e995045acC2cE071e79978c5f4 "0x4d24BF63E5d6E03708e2DFd5cc8253B3f22FE913"
+// npx hardhat verify --network bsctest 0x3D9F2E65CBeeB7E6f0CD665dEFE691F622667eFc "0x4d24BF63E5d6E03708e2DFd5cc8253B3f22FE913"
 
 // HARDHAT_NETWORK=bscmain node scripts/deploy-mugunghwa.js
 // npx hardhat verify --network bscmain 0x00

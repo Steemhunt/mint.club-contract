@@ -24,15 +24,6 @@ contract MugunghwaGame is Ownable {
     uint256 public deathRate = 5000; // Player can kill one player randomly by 50% chances on every move
     uint256 public prizeRate = 5000; // Winner will take 50% of total accumulated rewards
 
-    // IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-    // address private constant WBNB_CONTRACT = address(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
-    // address private constant BUSD_CONTRACT = address(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56);
-
-    // MARK: - Testnet Settings
-    IUniswapV2Router02 private constant PANCAKE_ROUTER = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
-    address private constant WBNB_CONTRACT = address(0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd);
-    address private constant BUSD_CONTRACT = address(0x337610d27c682E347C9cD60BD4b3b107C9d34dDd);
-
     // Player => progress
     mapping (address => uint8) public progress;
     address[] private players;
@@ -80,8 +71,8 @@ contract MugunghwaGame is Ownable {
         accMoveCount++;
     }
 
-    /*
-        @title Move by one square, and randomly kill one player
+    /**
+        @notice Move by one square, and randomly kill one player
     */
     function move() external returns (uint8) {
         address player = _msgSender();
@@ -89,6 +80,7 @@ contract MugunghwaGame is Ownable {
         require(progress[player] >= 1, 'NOT_STARTED');
 
         // MARK: - Defence mechanisims for try-and-error attacks
+        // NOTE: This won't prevent all edge cases. More notes on _getRandom() function
 
         // NOTE: This check can be by passed if a contract is in construction.
         require(!Address.isContract(player), 'CONTRACT_NOT_ALLOWED');
@@ -163,15 +155,21 @@ contract MugunghwaGame is Ownable {
         }
     }
 
+    /**
+     * @dev get a pseudo random number within the range
+     *
+     * NOTE: This is not a real random number, and anyone can check what this function generates.
+     * This means players can see who they will kill on their `move()` transaction
+     *
+     * Two benefits by hack this contract:
+     *  1. Users can avoid kill him/her self
+     *  2. Users can use multiple accounts to make their main account go forward with less risks.
+     *
+     * We can solve this issue by using VRF, or an external oracle (a.k.a centralization),
+     * but that becomes too complicated and cost inefficient for this small event project.
+     * I will leave these edge cases as a part of playing tactic.
+     */
     function _getRandom(uint256 range) private view returns (uint256) {
-        uint256 pseudoRandom = uint256(keccak256(abi.encodePacked(_msgSender(), block.number, accMoveCount))) % 1e18;
-
-        // An external oracle for random seed
-        address[] memory path = new address[](2);
-        path[0] = WBNB_CONTRACT;
-        path[1] = BUSD_CONTRACT;
-        uint256 price = PANCAKE_ROUTER.getAmountsOut(pseudoRandom, path)[path.length - 1];
-
-        return (price + pseudoRandom) % range;
+        return uint256(keccak256(abi.encodePacked(_msgSender(), block.number, block.timestamp, accMoveCount))) % range;
     }
 }

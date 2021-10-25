@@ -3,9 +3,10 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./lib/IUniswapV2Router02.sol";
+import "../lib/IUniswapV2Router02.sol";
 
 /**
 * @title Mugunghwa Game - Motivated by Squid Game movie
@@ -16,7 +17,7 @@ import "./lib/IUniswapV2Router02.sol";
 * 3. Users who successfully moved 10 squares win the prize
 * 4. Sponsors can put additional prize pool
 */
-contract MugunghwaGame is Ownable {
+contract MugunghwaGame is Ownable, Pausable {
     IERC20 private baseToken;
 
     uint256 public burnRate = 1000; // 1,000 / 10,000 = 10% of total prize will be burned on each game
@@ -27,7 +28,7 @@ contract MugunghwaGame is Ownable {
     // Player => progress
     mapping (address => uint8) public progress;
     address[] private players;
-    address public lastPlayer;
+    address private lastPlayer;
     uint256 public accStartCount;
     uint256 public accMoveCount;
 
@@ -55,7 +56,21 @@ contract MugunghwaGame is Ownable {
         emit UpdateConfig(burnRate, ticketPrice, deathRate, prizeRate);
     }
 
-    function start() external {
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    // @notice This is admin function for migrating contract when upgrade is required.
+    // This cannot be called once the ownership is renounced.
+    function migrate(address to) external onlyOwner whenPaused {
+        require(baseToken.transfer(to, baseToken.balanceOf(address(this))), 'MIGRATION_FAILED');
+    }
+
+    function start() external whenNotPaused {
         address player = _msgSender();
 
         require(baseToken.allowance(player, address(this)) >= ticketPrice, 'NOT_ENOUGH_ALLOWANCE');
@@ -74,7 +89,7 @@ contract MugunghwaGame is Ownable {
     /**
         @notice Move by one square, and randomly kill one player
     */
-    function move() external returns (uint8) {
+    function move() external whenNotPaused returns (uint8) {
         address player = _msgSender();
 
         require(progress[player] >= 1, 'NOT_STARTED');

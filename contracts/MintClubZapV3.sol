@@ -86,7 +86,7 @@ contract MintClubZapV3 is Context {
         } else {
             address[] memory path = _getPathToMint(from);
 
-            fromAmountRequired = PANCAKE_ROUTER.getAmountsIn(reserveRequired, path)[path.length - 1];
+            fromAmountRequired = PANCAKE_ROUTER.getAmountsIn(reserveRequired, path)[0];
         }
 
         mintTokenTaxAmount = reserveRequired * BUY_TAX / MAX_TAX;
@@ -123,7 +123,7 @@ contract MintClubZapV3 is Context {
             mintTokenAmount = toAmount;
         } else {
             address[] memory path = _getPathFromMint(to);
-            mintTokenAmount = PANCAKE_ROUTER.getAmountsIn(toAmount, path)[path.length - 1];
+            mintTokenAmount = PANCAKE_ROUTER.getAmountsIn(toAmount, path)[0];
         }
 
         tokensRequired = getTokenAmountFor(from, mintTokenAmount);

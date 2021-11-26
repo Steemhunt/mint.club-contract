@@ -10,12 +10,12 @@ async function main() {
   const deployer = accounts[0].address;
   console.log(`Deploy from account: ${deployer}`);
 
-  const MintClubZapV3 = await hre.ethers.getContractFactory('MintClubZapV3');
-  const zap = await MintClubZapV3.deploy();
+  const MintClubZapV4 = await hre.ethers.getContractFactory('MintClubZapV4');
+  const zap = await MintClubZapV4.deploy({ gasLimit: 4000000 });
   await zap.deployed();
 
   console.log('---');
-  console.log(`MintClubZapV3 contract: ${zap.address}`);
+  console.log(`MintClubZapV4 contract: ${zap.address}`);
 };
 
 main()
@@ -27,7 +27,7 @@ main()
 
 // Deploy:
 // npx hardhat compile && HARDHAT_NETWORK=bsctest node scripts/deploy-zap.js
-// npx hardhat verify --network bsctest 0xFC1Ccd12A3aFbf3e6E5ba134Fa446935D20bc2F6
+// npx hardhat verify --network bsctest 0x82FB619149c3834f3185dBfdF7E6D8307DdE769D
 
 // npx hardhat compile && HARDHAT_NETWORK=bscmain node scripts/deploy-zap.js
-// npx hardhat verify --network bscmain 0x81439cb0018F802fDfa6F5146e2041f4f69f7f38
+// npx hardhat verify --network bscmain 0x0fd056274EE61497D0dB17A88F1C2DCa4f49175a

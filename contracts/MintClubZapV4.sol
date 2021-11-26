@@ -12,10 +12,10 @@ import "./lib/IWETH.sol";
 import "./lib/Math.sol";
 
 /**
-* @title MintClubZapV3 extension contract (3.0.0)
+* @title MintClubZapV4 extension contract (4.0.0)
 */
 
-contract MintClubZapV3 is Context {
+contract MintClubZapV4 is Context {
     using SafeERC20 for IERC20;
 
     // Copied from MintClubBond
@@ -126,8 +126,8 @@ contract MintClubZapV3 is Context {
             mintTokenAmount = PANCAKE_ROUTER.getAmountsIn(toAmount, path)[0];
         }
 
-        tokensRequired = getTokenAmountFor(from, mintTokenAmount);
         mintTokenTaxAmount = mintTokenAmount * SELL_TAX / MAX_TAX;
+        tokensRequired = getTokenAmountFor(from, mintTokenAmount + mintTokenTaxAmount);
     }
 
     function zapInBNB(address to, uint256 minAmountOut, address beneficiary) public payable {

@@ -44,9 +44,9 @@ module.exports = {
       accounts: [process.env.BSC_TEST_PRIVATE_KEY]
     },
     bsctest: {
-      url: `https://data-seed-prebsc-2-s1.binance.org:8545`,
+      url: `https://data-seed-prebsc-1-s2.binance.org:8545/`,
       chainId: 97,
-      gasPrice: 10000000000, // 10 GWei
+      gasPrice: 50000000000, // 10 GWei
       blockGasLimit: 30000000,
       accounts: [process.env.BSC_TEST_PRIVATE_KEY]
     },

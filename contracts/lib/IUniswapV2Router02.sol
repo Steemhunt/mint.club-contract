@@ -38,4 +38,12 @@ interface IUniswapV2Router02 {
         returns (
             uint[] memory amounts
         );
+
+    function getAmountsIn(
+        uint amountOut,
+        address[] memory path
+    ) external view
+        returns (
+            uint[] memory amounts
+        );
 }

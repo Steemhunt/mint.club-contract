@@ -3,6 +3,12 @@
 pragma solidity ^0.8.6;
 
 interface IMintClubBond {
+    function reserveBalance(
+        address tokenAddress
+    ) external view returns (
+        uint256 reserveBalance
+    );
+
     function getMintReward(
         address tokenAddress,
         uint256 reserveAmount

@@ -26,9 +26,8 @@ main()
   });
 
 // Deploy:
-// npx hardhat compile
-// HARDHAT_NETWORK=bsctest node scripts/deploy-zap.js
+// npx hardhat compile && HARDHAT_NETWORK=bsctest node scripts/deploy-zap.js
 // npx hardhat verify --network bsctest 0xFC1Ccd12A3aFbf3e6E5ba134Fa446935D20bc2F6
 
-// HARDHAT_NETWORK=bscmain node scripts/deploy-zap.js
-// npx hardhat verify --network bscmain 0x9111A272e9dE242Cf9aa7932a42dB3664Ca3eC9D
+// npx hardhat compile && HARDHAT_NETWORK=bscmain node scripts/deploy-zap.js
+// npx hardhat verify --network bscmain 0x81439cb0018F802fDfa6F5146e2041f4f69f7f38

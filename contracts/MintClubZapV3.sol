@@ -9,6 +9,7 @@ import "./lib/IUniswapV2Router02.sol";
 import "./lib/IUniswapV2Factory.sol";
 import "./lib/IMintClubBond.sol";
 import "./lib/IWETH.sol";
+import "./lib/Math.sol";
 
 /**
 * @title MintClubZapV3 extension contract (3.0.0)
@@ -16,6 +17,11 @@ import "./lib/IWETH.sol";
 
 contract MintClubZapV3 is Context {
     using SafeERC20 for IERC20;
+
+    // Copied from MintClubBond
+    uint256 private constant BUY_TAX = 3;
+    uint256 private constant SELL_TAX = 13;
+    uint256 private constant MAX_TAX = 1000;
 
     address private constant DEFAULT_BENEFICIARY = 0x82CA6d313BffE56E9096b16633dfD414148D66b1;
 
@@ -45,32 +51,83 @@ contract MintClubZapV3 is Context {
 
     receive() external payable {}
 
-    // Renamed getAmountOut -> estimateZapIn
-    function estimateZapIn(address from, address to, uint256 amount) external view returns (uint256 tokenToReceive, uint256 mintTokenTaxAmount) {
+    // MINT and others (parameter) -> Mint Club Tokens
+    function estimateZapIn(address from, address to, uint256 fromAmount) external view returns (uint256 tokensToReceive, uint256 mintTokenTaxAmount) {
         uint256 mintAmount;
 
         if (from == MINT_CONTRACT) {
-            mintAmount = amount;
+            mintAmount = fromAmount;
         } else {
             address[] memory path = _getPathToMint(from);
 
-            mintAmount = PANCAKE_ROUTER.getAmountsOut(amount, path)[path.length - 1];
+            mintAmount = PANCAKE_ROUTER.getAmountsOut(fromAmount, path)[path.length - 1];
         }
 
         return BOND.getMintReward(to, mintAmount);
     }
 
-    function estimateZapOut(address from, address to, uint256 amount) external view returns (uint256 amountToReceive, uint256 mintTokenTaxAmount) {
+    // Get required MINT token amount to buy X amount of Mint Club tokens
+    function getReserveAmountToBuy(address tokenAddress, uint256 tokensToBuy) public view returns (uint256) {
+        IERC20 token = IERC20(tokenAddress);
+
+        uint256 newTokenSupply = token.totalSupply() + tokensToBuy;
+        uint256 reserveRequired = (newTokenSupply ** 2 - token.totalSupply() ** 2) / (2 * 1e18);
+        reserveRequired = reserveRequired * MAX_TAX / (MAX_TAX - BUY_TAX); // Deduct tax amount
+
+        return reserveRequired;
+    }
+
+    // MINT and others -> Mint Club Tokens (parameter)
+    function estimateZapInReverse(address from, address to, uint256 tokensToReceive) external view returns (uint256 fromAmountRequired, uint256 mintTokenTaxAmount) {
+        uint256 reserveRequired = getReserveAmountToBuy(to, tokensToReceive);
+
+        if (from == MINT_CONTRACT) {
+            fromAmountRequired = reserveRequired;
+        } else {
+            address[] memory path = _getPathToMint(from);
+
+            fromAmountRequired = PANCAKE_ROUTER.getAmountsIn(reserveRequired, path)[path.length - 1];
+        }
+
+        mintTokenTaxAmount = reserveRequired * BUY_TAX / MAX_TAX;
+    }
+
+    // Mint Club Tokens (parameter) -> MINT and others
+    function estimateZapOut(address from, address to, uint256 fromAmount) external view returns (uint256 toAmountToReceive, uint256 mintTokenTaxAmount) {
         uint256 mintToRefund;
-        (mintToRefund, mintTokenTaxAmount) = BOND.getBurnRefund(from, amount);
+        (mintToRefund, mintTokenTaxAmount) = BOND.getBurnRefund(from, fromAmount);
 
         if (to == MINT_CONTRACT) {
-            amountToReceive = mintToRefund;
+            toAmountToReceive = mintToRefund;
         } else {
             address[] memory path = _getPathFromMint(to);
 
-            amountToReceive = PANCAKE_ROUTER.getAmountsOut(mintToRefund, path)[path.length - 1];
+            toAmountToReceive = PANCAKE_ROUTER.getAmountsOut(mintToRefund, path)[path.length - 1];
         }
+    }
+
+    // Get amount of Mint Club tokens to receive X amount of MINT tokens
+    function getTokenAmountFor(address tokenAddress, uint256 mintTokenAmount) public view returns (uint256) {
+        IERC20 token = IERC20(tokenAddress);
+
+        uint256 reserveAfterSell = BOND.reserveBalance(tokenAddress) - mintTokenAmount;
+        uint256 supplyAfterSell = Math.floorSqrt(2 * 1e18 * reserveAfterSell);
+
+        return token.totalSupply() - supplyAfterSell;
+    }
+
+    // Mint Club Tokens -> MINT and others (parameter)
+    function estimateZapOutReverse(address from, address to, uint256 toAmount) external view returns (uint256 tokensRequired, uint256 mintTokenTaxAmount) {
+        uint256 mintTokenAmount;
+        if (to == MINT_CONTRACT) {
+            mintTokenAmount = toAmount;
+        } else {
+            address[] memory path = _getPathFromMint(to);
+            mintTokenAmount = PANCAKE_ROUTER.getAmountsIn(toAmount, path)[path.length - 1];
+        }
+
+        tokensRequired = getTokenAmountFor(from, mintTokenAmount);
+        mintTokenTaxAmount = mintTokenAmount * SELL_TAX / MAX_TAX;
     }
 
     function zapInBNB(address to, uint256 minAmountOut, address beneficiary) public payable {

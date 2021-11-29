@@ -27,7 +27,7 @@ main()
 
 // Deploy:
 // npx hardhat compile && HARDHAT_NETWORK=bsctest node scripts/deploy-zap.js
-// npx hardhat verify --network bsctest 0x82FB619149c3834f3185dBfdF7E6D8307DdE769D
+// npx hardhat verify --network bsctest 0x84f805d74A76A53841B05a830108A212E08df683
 
 // npx hardhat compile && HARDHAT_NETWORK=bscmain node scripts/deploy-zap.js
-// npx hardhat verify --network bscmain 0x0fd056274EE61497D0dB17A88F1C2DCa4f49175a
+// npx hardhat verify --network bscmain 0xa27f40B02dD20eBA689791aE0F7E59a18963F521

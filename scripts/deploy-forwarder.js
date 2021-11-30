@@ -11,11 +11,11 @@ async function main() {
   console.log(`Deploy from account: ${deployer}`);
 
   const Forwarder = await hre.ethers.getContractFactory('Forwarder');
-  const zap = await Forwarder.deploy();
-  await zap.deployed();
+  const contract = await Forwarder.deploy();
+  await contract.deployed();
 
   console.log('---');
-  console.log(`Forwarder contract: ${zap.address}`);
+  console.log(`Forwarder contract: ${contract.address}`);
 };
 
 main()
@@ -30,4 +30,4 @@ main()
 // npx hardhat verify --network bsctest 0xcAaB0734ca9e499209EBEEf3c3c6Bb9Fdc2EE6A6
 
 // npx hardhat compile && HARDHAT_NETWORK=bscmain node scripts/deploy-forwarder.js
-// npx hardhat verify --network bscmain xxxx
+// npx hardhat verify --network bscmain 0xC11E0652ac827B14E13b272fD92d6c44A97fD5A1

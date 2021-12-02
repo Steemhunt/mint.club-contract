@@ -27,7 +27,7 @@ main()
 
 // Deploy:
 // npx hardhat compile && HARDHAT_NETWORK=bsctest node scripts/deploy-forwarder.js
-// npx hardhat verify --network bsctest 0xcAaB0734ca9e499209EBEEf3c3c6Bb9Fdc2EE6A6
+// npx hardhat verify --network bsctest 0x1F23d85Ee7fDF635F815329a6fb24a036C0E1090
 
 // npx hardhat compile && HARDHAT_NETWORK=bscmain node scripts/deploy-forwarder.js
-// npx hardhat verify --network bscmain 0xC11E0652ac827B14E13b272fD92d6c44A97fD5A1
+// npx hardhat verify --network bscmain 0x763d88D297a00F1DF229AddD60De4277d86aD786

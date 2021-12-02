@@ -104,6 +104,16 @@ contract('Forwarder', function(accounts) {
         expect(await this.token.balanceOf(this.forwarder.address)).to.be.bignumber.equal(ether('0'));
       });
 
+      it('should handle 0 fee properly', async function() {
+        await this.forwarder.updateFee(deployer, 0);
+
+        await this.forwarder.accept(this.token.address, requester, ether('100'), { from: owner });
+
+        expect(await this.token.balanceOf(owner)).to.be.bignumber.equal(ether('100'));
+        expect(await this.token.balanceOf(deployer)).to.be.bignumber.equal(ether('0'));
+        expect(await this.token.balanceOf(this.forwarder.address)).to.be.bignumber.equal(ether('0'));
+      });
+
       it('should revert if non-owner called accept function', async function() {
         await expectRevert(
           this.forwarder.accept(this.token.address, requester, ether('100'), { from: deployer }),

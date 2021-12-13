@@ -12,7 +12,7 @@ import "./lib/IWETH.sol";
 import "./lib/Math.sol";
 
 /**
-* @title MintClubZapV4 extension contract (4.0.0)
+* @title MintClubZapV5 extension contract (5.0.0)
 */
 
 contract MintClubZapV4 is Context {
@@ -66,6 +66,23 @@ contract MintClubZapV4 is Context {
         return BOND.getMintReward(to, mintAmount);
     }
 
+    function estimateZapInInitial(address from, uint256 fromAmount) external view returns (uint256 tokensToReceive, uint256 mintTokenTaxAmount) {
+        uint256 mintAmount;
+
+        if (from == MINT_CONTRACT) {
+            mintAmount = fromAmount;
+        } else {
+            address[] memory path = _getPathToMint(from);
+
+            mintAmount = PANCAKE_ROUTER.getAmountsOut(fromAmount, path)[path.length - 1];
+        }
+
+        uint256 taxAmount = mintAmount * BUY_TAX / MAX_TAX;
+        uint256 newSupply = Math.floorSqrt(2 * 1e18 * (mintAmount - taxAmount));
+
+        return (newSupply, taxAmount);
+    }
+
     // Get required MINT token amount to buy X amount of Mint Club tokens
     function getReserveAmountToBuy(address tokenAddress, uint256 tokensToBuy) public view returns (uint256) {
         IERC20 token = IERC20(tokenAddress);
@@ -80,6 +97,20 @@ contract MintClubZapV4 is Context {
     // MINT and others -> Mint Club Tokens (parameter)
     function estimateZapInReverse(address from, address to, uint256 tokensToReceive) external view returns (uint256 fromAmountRequired, uint256 mintTokenTaxAmount) {
         uint256 reserveRequired = getReserveAmountToBuy(to, tokensToReceive);
+
+        if (from == MINT_CONTRACT) {
+            fromAmountRequired = reserveRequired;
+        } else {
+            address[] memory path = _getPathToMint(from);
+
+            fromAmountRequired = PANCAKE_ROUTER.getAmountsIn(reserveRequired, path)[0];
+        }
+
+        mintTokenTaxAmount = reserveRequired * BUY_TAX / MAX_TAX;
+    }
+
+    function estimateZapInReverseInitial(address from, uint256 tokensToReceive) external view returns (uint256 fromAmountRequired, uint256 mintTokenTaxAmount) {
+        uint256 reserveRequired = tokensToReceive ** 2 / 2e18;
 
         if (from == MINT_CONTRACT) {
             fromAmountRequired = reserveRequired;

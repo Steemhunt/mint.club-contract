@@ -15,7 +15,7 @@ import "./lib/Math.sol";
 * @title MintClubZapV5 extension contract (5.0.0)
 */
 
-contract MintClubZapV4 is Context {
+contract MintClubZapV5 is Context {
     using SafeERC20 for IERC20;
 
     // Copied from MintClubBond

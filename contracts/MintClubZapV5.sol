@@ -66,6 +66,7 @@ contract MintClubZapV5 is Context {
         return BOND.getMintReward(to, mintAmount);
     }
 
+    // Estimate the bonding curve minting amount when the token does not exist yet (initialization stage)
     function estimateZapInInitial(address from, uint256 fromAmount) external view returns (uint256 tokensToReceive, uint256 mintTokenTaxAmount) {
         uint256 mintAmount;
 
@@ -109,6 +110,7 @@ contract MintClubZapV5 is Context {
         mintTokenTaxAmount = reserveRequired * BUY_TAX / MAX_TAX;
     }
 
+    // Estimate the bonding curve minting amount when the token does not exist yet (initialization stage)
     function estimateZapInReverseInitial(address from, uint256 tokensToReceive) external view returns (uint256 fromAmountRequired, uint256 mintTokenTaxAmount) {
         uint256 reserveRequired = tokensToReceive ** 2 / 2e18;
 

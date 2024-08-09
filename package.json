@@ -26,5 +26,8 @@
     "solidity-coverage": "^0.7.16",
     "web3": "^1.5.0",
     "yargs": "^13.3.2"
+  },
+  "dependencies": {
+    "hardhat-interface-generator": "^0.0.6"
   }
 }

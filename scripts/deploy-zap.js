@@ -10,24 +10,24 @@ async function main() {
   const deployer = accounts[0].address;
   console.log(`Deploy from account: ${deployer}`);
 
-  const MintClubZapV5 = await hre.ethers.getContractFactory('MintClubZapV5');
-  const zap = await MintClubZapV5.deploy({ gasLimit: 4000000 });
+  const MintClubZapV6 = await hre.ethers.getContractFactory("MintClubZapV6");
+  const zap = await MintClubZapV6.deploy({ gasLimit: 4000000 });
   await zap.deployed();
 
-  console.log('---');
-  console.log(`MintClubZapV5 contract: ${zap.address}`);
-};
+  console.log("---");
+  console.log(`MintClubZapV6 contract: ${zap.address}`);
+}
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
 
 // Deploy:
 // npx hardhat compile && HARDHAT_NETWORK=bsctest node scripts/deploy-zap.js
-// npx hardhat verify --network bsctest 0xa2e078F581Ab5f7aFf47dBBAFb7F0139BC17Efa6
+// npx hardhat verify --network bsctest 0x2B50078e9913dEf1073A5fE5FE53FB9f558B1803
 
 // npx hardhat compile && HARDHAT_NETWORK=bscmain node scripts/deploy-zap.js
-// npx hardhat verify --network bscmain 0x35A358F72024ac7ca040CAAE314296E5377E6157
+// npx hardhat verify --network bscmain 0x070F062C43aa593AA826FBA1A986Ab55Ca426523
